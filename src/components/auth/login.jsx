@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import leftlogo from '../../assets/left-logo.png';
 import logo from '../../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
-import { AppContext } from '../Context/AppContext';
+import { AppContext } from '../../Context/AppContext';
 
 function LoginPage() {
     const navigate = useNavigate();
