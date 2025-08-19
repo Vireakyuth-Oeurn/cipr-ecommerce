@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import login from '../../assets/login.png';
 import logo from '../../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
-import { AppContext } from '../../context/AppContext';
+import { AppContext } from '../../Context/AppContext';
 
 function RegisterPage() {
     const navigate = useNavigate();
