@@ -14,7 +14,7 @@ import Cart from './pages/cart';
 import { SimpleToaster } from './components/ui/simple-toaster';
 import LoginPage from './components/auth/login';
 import RegisterPage from './components/auth/register';
-import { AppContext } from './Context/AppContext';
+import { AppContext } from './context/AppContext';
 import CartProvider from './context/CartContext';
 
 function App() {

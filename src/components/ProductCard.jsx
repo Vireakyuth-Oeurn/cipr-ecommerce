@@ -4,7 +4,7 @@ import { ShoppingCart, Heart, ImageOff } from 'lucide-react';
 import { addToCart } from '../api/services';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useCart } from '../hooks/useCart';
-import { AppContext } from '../Context/AppContext';
+import { AppContext } from '../context/AppContext';
 
 function ProductCard({ product }) {
   const { handleError, showToast } = useErrorHandler();
