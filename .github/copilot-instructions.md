@@ -5,17 +5,25 @@ React 19 + Vite e-commerce frontend with Tailwind CSS, featuring product browsin
 
 ## Critical Architecture Patterns
 
-### Context & State Management
-- **AppContext** (`src/context/AppContext.jsx`) manages global auth state with localStorage persistence
+### Dual Context Architecture
+- **AppContext** (`src/Context/AppContext.jsx`) - Global auth state with localStorage persistence
+- **CartContext** (`src/context/CartContext.jsx`) - Cart state management with API integration
+- Import paths: `../Context/AppContext` (capitalized) vs `../context/CartContext` (lowercase)
 - Authentication flow: token → API call → user object → localStorage sync
-- Context provides: `token`, `user`, `isAuthenticated`, `logout`, `setToken`
-- Import path: `import { AppContext } from '../Context/AppContext'` (note capitalized 'Context')
+- Cart flow: API calls → enhanced product data → React context → UI updates
 
-### API Integration
+### API Integration with Enhanced Error Handling
 - **Primary API**: `https://cipr-api.panhayuthoeun.codes` (proxied via `/api` in dev)
-- **Authentication**: Bearer token from localStorage automatically added to requests
-- **Services pattern**: `src/api/services.js` handles all API calls with centralized axios instance
-- **Environment variable**: `VITE_API_URL` for API base URL configuration
+- **Services pattern**: `src/api/services.js` with comprehensive error handling and fallbacks
+- **Cart enhancement**: `getCart()` fetches products and enhances with local images/data  
+- **Graceful degradation**: API failures return safe defaults instead of throwing errors
+- **Development debugging**: Console logging enabled via `import.meta.env.DEV`
+
+### Local Image System
+- **Image mapping**: `src/utils/imageMapping.js` maps categories to local images in `public/images/`
+- **Multi-format support**: PNG, AVIF, WebP, JPG based on category
+- **Category coverage**: 20+ images across t-shirts, jackets, shoes, pants, etc.
+- **Fallback strategy**: Unknown categories default to t-shirt images
 
 ### Component Architecture
 - **Compound components**: Many components accept children and use composition
@@ -35,106 +43,126 @@ npm run lint         # ESLint check
 
 ### Key Development Patterns
 
-#### Authentication Flow
+#### Cart Integration Pattern
 ```jsx
-// Always check auth state from context
-const { user, isAuthenticated, logout } = useContext(AppContext);
+// Always use cart context for cart operations
+import { useCart } from '../hooks/useCart';
 
-// Route protection pattern
-<Route path="/login" element={user ? <Home/> : <LoginPage />} />
+const { cartItems, cartCount, loading, fetchCart, addItemToCart } = useCart();
+
+// Add to cart with context refresh
+const handleAddToCart = async () => {
+  await addToCart(product.id, 1);  // API call
+  await fetchCart();               // Refresh context
+  showToast('Added to cart!', 'success');
+};
 ```
 
-#### API Service Pattern
+#### Authentication + Cart State Pattern
 ```jsx
-// Centralized API instance with auto-auth
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
-  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-});
+// Cart automatically syncs with auth state
+const { isAuthenticated } = useContext(AppContext);
+const { cartItems, fetchCart } = useCart();
 
-// All services throw errors - no fallback data
-export const getProducts = async () => {
-  try {
-    const response = await api.get('/products');
-    return { products: response.data?.products || response.data || [] };
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to fetch products');
+// Cart clears on logout, fetches on login
+useEffect(() => {
+  if (isAuthenticated) {
+    fetchCart();
+  } else {
+    // Cart context automatically clears
   }
-};
-
-// Category-specific fetching for homepage
-export const getProductsByCategory = async (category, limit = 4) => {
-  const { products } = await getProducts({ category, limit });
-  return { products: products.filter(p => p.category === category).slice(0, limit) };
-};
+}, [isAuthenticated]);
 ```
 
-#### Loading States
+#### Enhanced Product Data Pattern
 ```jsx
-// Standard loading pattern with skeleton
-if (loading) {
-  return (
-    <div className="grid grid-cols-4 gap-6">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="space-y-3">
-          <div className="aspect-square bg-gray-100 rounded-lg animate-pulse"></div>
-          <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
-        </div>
-      ))}
-    </div>
-  );
-}
+// Products enhanced with local images and ratings
+const enhanceProduct = (product) => ({
+  ...product,
+  image: getProductImage(product.category, product.id),
+  rating: Math.random() * 2 + 3, // 3-5 stars
+  reviewCount: Math.floor(Math.random() * 200) + 10
+});
 ```
 
 ## Project-Specific Conventions
 
-### File Organization
-- **Components**: Feature-based grouping (`auth/`, `ui/`, `common/`)
-- **Pages**: Route components in `src/pages/`
-- **Layout**: `MainLayout.jsx` provides consistent navigation + footer wrapper
-- **Context path**: Import from `../Context/AppContext` (capitalized folder name)
+### Context Provider Hierarchy
+```jsx
+// App.jsx provider nesting (CRITICAL ORDER)
+<AppProvider>          // Auth context first
+  <ErrorBoundary>
+    <CartProvider>     // Cart context second (needs auth)
+      <Router>
+        <Routes>...</Routes>
+        <SimpleToaster />
+      </Router>
+    </CartProvider>
+  </ErrorBoundary>
+</AppProvider>
+```
 
-### Styling Patterns
-- **Tailwind-first**: No CSS modules, utility classes with `clsx` for conditionals
-- **Responsive design**: Mobile-first with `sm:`, `md:`, `lg:` breakpoints
-- **Color scheme**: Primary blue-600, gray scale for text, red for errors/alerts
-- **Animations**: Use `animate-pulse` for loading, `transition-*` for hovers
+### Route Architecture  
+- **Public routes**: Wrapped in `<MainLayout>` (home, products, collections)
+- **Auth routes**: No layout (login, register) with conditional redirects
+- **Cart route**: Protected via context, not route guards
+- **Route protection**: `element={user ? <Home/> : <LoginPage />}` pattern
 
-### Navigation & Routing
-- **Layout pattern**: Routes wrapped in `<MainLayout>` for nav/footer
-- **Active state**: `isActive()` helper compares pathname for navigation highlighting
-- **Mobile menu**: Overlay pattern with fixed positioning and transform animations
-
-### Error Handling
-- **Boundary errors**: Caught by ErrorBoundary with retry mechanisms
-- **API errors**: All services throw errors, handled by components with proper error states
-- **Form validation**: Display errors inline with red borders and text
-- **Toast notifications**: Use SimpleToaster for user feedback
+### API Service Error Handling
+```jsx
+// Never throw errors in cart services - always return safe data
+export const getCart = async () => {
+  try {
+    // Try enhanced cart with product details
+    const enhancedItems = await enhanceCartItems(cartItems);
+    return { items: enhancedItems };
+  } catch (enhancementError) {
+    // Fall back to basic cart items
+    return { items: basicCartItems };
+  } catch (apiError) {
+    // Final fallback to empty cart
+    return { items: [] };
+  }
+};
+```
 
 ## Integration Points
 
 ### External Services
-- **API**: Laravel backend at `cipr-api.panhayuthoeun.codes`
-  - Products: `/api/products` (public), `/api/products/{id}` (public)
-  - Cart: `/api/cart` (POST/GET, requires auth)
-  - Sales: `/api/sales` (GET purchase history, POST purchase, requires auth)
-  - Auth: `/api/login`, `/api/register`, `/api/logout`, `/api/user`
-- **Recommendations**: Lambda function endpoint (reserved for future integration)
-- **Images**: Unsplash URLs for product images
-- **Icons**: Lucide React for consistent iconography
+- **CIPR API**: Laravel backend with comprehensive e-commerce endpoints
+  - Auth: `/api/login`, `/api/register`, `/api/user`, `/api/logout`
+  - Products: `/api/products`, `/api/products/{id}` (public)
+  - Cart: `/api/cart` (CRUD operations, requires auth)  
+  - Sales: `/api/sales` (purchase history/checkout, requires auth)
+- **Local Images**: Category-based mapping to `public/images/` folder
+- **Toast System**: `SimpleToaster` with `useErrorHandler` hook integration
 
-### Build & Deployment
-- **Vite proxy**: Development API calls proxied to external API
-- **Environment variables**: `VITE_API_URL` for API configuration
-- **Static deployment**: Built for Vercel/Netlify deployment
-- **Asset handling**: Vite handles imports, images in `src/assets/`
+### Cart State Synchronization
+- **API → Context → UI**: Cart changes flow through context to update navbar badge
+- **Authentication sync**: Cart auto-clears on logout, fetches on login
+- **Error resilience**: Failed API calls don't break cart functionality
+- **Development debugging**: Console logs track cart state changes
 
 ## Common Gotchas
-- Context folder is capitalized: `../Context/AppContext`
-- API calls automatically include auth tokens via axios interceptor
-- All API services return structured data: `{ products: [...] }`, `{ product: {...} }`
-- Use `import.meta.env.DEV` for development-only features
-- Mobile menu requires both transform classes and backdrop for proper UX
-- Authentication checks both `token` AND `user` existence for `isAuthenticated`
-- Page-specific API functions: `getProductsByCategory()` for homepage, `getCollections()` for collections
-- Recommendations use enhanced product data with rating/review metadata
+
+### Context Import Paths
+- AppContext: `import { AppContext } from '../Context/AppContext'` (capitalized folder)
+- CartContext: `import { useCart } from '../hooks/useCart'` (lowercase folder)
+
+### Cart Integration Requirements
+- Always call `fetchCart()` after successful `addToCart()` API calls
+- Cart context automatically handles authentication state changes
+- Use `cartCount` from context, not manual calculations
+- Cart loading state managed automatically by context
+
+### API Response Handling
+- Cart API returns various formats: `response.data.items`, `response.data`, or `response`
+- Product enhancement may fail - services provide safe fallbacks
+- Development logs enabled only in dev mode: `if (import.meta.env.DEV)`
+- Authentication errors (401) automatically clear cart state
+
+### Image System
+- Local images override API images for better performance/reliability
+- Category mapping in `imageMapping.js` supports fallbacks and multiple formats
+- Images stored in `public/images/` with category-based organization
+- Unknown categories fallback to t-shirt images for consistency

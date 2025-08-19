@@ -287,43 +287,7 @@ function Home() {
       <div className="text-center pb-12">
         <div className="inline-flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-full">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-          <span className="text-sm text-gray-600 font-medium">Powered by AI Algorithm</span>
-        </div>
-      </div>
-
-      {/* QR Code Section */}
-      <div className="py-16 bg-gradient-to-br from-blue-600 to-purple-700">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Shop on the Go
-          </h2>
-          <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Scan to discover our latest collections and exclusive offers
-          </p>
-          
-          {/* QR Code Display */}
-          <div className="flex flex-col items-center space-y-4 sm:space-y-6 mt-8 sm:mt-12">
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-8 rounded-2xl shadow-lg">
-              <QRCodeGenerator 
-                url="https://www.youtube.com/shorts/Ay8lynMZ4mE?feature=share" 
-                size={200}
-                className="mx-auto sm:hidden"
-              />
-              <QRCodeGenerator 
-                url="https://www.youtube.com/shorts/Ay8lynMZ4mE?feature=share" 
-                size={250}
-                className="mx-auto hidden sm:block"
-              />
-            </div>
-            
-            <div className="text-center">
-              <p className="text-xs sm:text-sm text-blue-100 mb-3">Point your camera at the QR code</p>
-              <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
-                Ready to scan
-              </div>
-            </div>
-          </div>
+          <span className="text-sm text-gray-600 font-medium">Powered by CIPR Recommendation Model</span>
         </div>
       </div>
 
