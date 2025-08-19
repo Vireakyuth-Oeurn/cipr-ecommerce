@@ -4,6 +4,7 @@ import leftlogo from '../../assets/left-logo.png';
 import logo from '../../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../../Context/AppContext';
+import { api, ENDPOINTS } from '../../api/index.js';
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -22,18 +23,12 @@ function LoginPage() {
         setErrors({});
         
         try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+            const res = await api.post(ENDPOINTS.LOGIN, formData);
 
-            const data = await res.json();
+            const data = res.data;
             console.log('API Response:', data);
 
-            if (res.ok && (data.access_token || data.token)) {
+            if (res.status >= 200 && res.status < 300 && (data.access_token || data.token)) {
                 const token = data.access_token || data.token;
                 console.log('Token received:', token);
                 setToken(token);
@@ -58,7 +53,24 @@ function LoginPage() {
             }
         } catch (error) {
             console.error('Login error:', error);
-            setErrors({ general: 'Network error. Please try again.' });
+            
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                
+                if (errorData.error && errorData.error.validation_errors) {
+                    const validationErrors = {};
+                    errorData.error.validation_errors.forEach(error => {
+                        validationErrors[error.field] = [error.message];
+                    });
+                    setErrors(validationErrors);
+                } else if (errorData.errors) {
+                    setErrors(errorData.errors);
+                } else {
+                    setErrors({ general: errorData.message || 'Login failed' });
+                }
+            } else {
+                setErrors({ general: 'Network error. Please try again.' });
+            }
         } finally {
             setIsLoading(false);
         }

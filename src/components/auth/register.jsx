@@ -4,6 +4,7 @@ import login from '../../assets/login.png';
 import logo from '../../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../../Context/AppContext';
+import { api, ENDPOINTS } from '../../api/index.js';
 
 function RegisterPage() {
     const navigate = useNavigate();
@@ -42,20 +43,13 @@ function RegisterPage() {
         setErrors({});
 
         try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+            const res = await api.post(ENDPOINTS.REGISTER, formData);
             
-            const data = await res.json();
+            const data = res.data;
             console.log("API Response:", data);
             
             // Check for success - your API returns code: 200 and access_token
-            if (res.ok && data.access_token && data.code === 200) {
+            if (res.status >= 200 && res.status < 300 && data.access_token && data.code === 200) {
                 console.log("Registration successful:", data);
                 setToken(data.access_token); // Use access_token instead of token
                 navigate("/");
@@ -82,8 +76,25 @@ function RegisterPage() {
                 console.error("Registration failed:", data);
             }
         } catch (error) {
-            console.error("Network error:", error);
-            setErrors({ general: 'Network error. Please try again.' });
+            console.error("Registration error:", error);
+            
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                
+                if (errorData.error && errorData.error.validation_errors) {
+                    const validationErrors = {};
+                    errorData.error.validation_errors.forEach(error => {
+                        validationErrors[error.field] = [error.message];
+                    });
+                    setErrors(validationErrors);
+                } else if (errorData.errors) {
+                    setErrors(errorData.errors);
+                } else {
+                    setErrors({ general: errorData.message || 'Registration failed' });
+                }
+            } else {
+                setErrors({ general: 'Network error. Please try again.' });
+            }
         } finally {
             setIsLoading(false);
         }
