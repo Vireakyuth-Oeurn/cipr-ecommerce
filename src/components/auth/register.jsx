@@ -42,7 +42,7 @@ function RegisterPage() {
         setErrors({});
 
         try {
-            const res = await fetch('/api/register', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
