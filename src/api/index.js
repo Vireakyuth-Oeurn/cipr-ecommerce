@@ -50,7 +50,7 @@ export const ENDPOINTS = {
   LOGIN: '/login',
   REGISTER: '/register',
   LOGOUT: '/logout',
-  USER: '/user',
+  // USER: '/user',
   
   // Products
   PRODUCTS: '/products',
