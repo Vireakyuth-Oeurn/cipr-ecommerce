@@ -37,6 +37,7 @@ function LoginPage() {
                 const token = data.access_token || data.token;
                 console.log('Token received:', token);
                 setToken(token);
+                console.log(token);
                 navigate("/");
             } else {
                 console.log("Full login error response:", data);

@@ -12,6 +12,7 @@ export default function AppProvider({ children }) {
   const setToken = (newToken) => {
     if (newToken) {
       localStorage.setItem("token", newToken);
+      console.log("is token save?", newToken);
       setTokenState(newToken);
     } else {
       localStorage.removeItem("token");
@@ -26,7 +27,7 @@ export default function AppProvider({ children }) {
     }
 
     try {
-      const res = await fetch("/api/user", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/user`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
