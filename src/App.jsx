@@ -17,6 +17,7 @@ import LoginPage from './components/auth/login';
 import RegisterPage from './components/auth/register';
 import { AppContext } from './context/AppContext';
 import { CartProvider } from './context/CartContext'; // ✅ Fixed: Use named import
+import PurchaseHistory from './pages/purhcase-history';
 
 function App() {
     const {user} = useContext(AppContext);
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/collections" element={<Collections />} />
                 <Route path="/new" element={<New />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/purchase-history" element={<PurchaseHistory/>}/>
               </Route>
 
               <Route path="*" element={<NotFoundPage />} />
