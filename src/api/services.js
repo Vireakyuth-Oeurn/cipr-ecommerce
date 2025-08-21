@@ -16,90 +16,110 @@ export const addToCart = async (productId, quantity = 1) => {
 
 export const getCart = async () => {
   try {
-    const response = await api.get(ENDPOINTS.CART);
-    const cartItems = response.data?.items || response.data || [];
+    console.log('🛒 Fetching cart...');
+    const response = await api.get('/cart');
+    console.log('🛒 Raw cart response:', response.data);
+
+    // Handle the actual API response structure
+    const cartData = response.data;
     
-    // If no cart items, return empty cart immediately
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      return { items: [] };
+    // Extract cart items from the response
+    let cartItems = [];
+    
+    if (cartData.cart && Array.isArray(cartData.cart)) {
+      // Your API returns { cart: [...] }
+      cartItems = cartData.cart;
+    } else if (cartData.items && Array.isArray(cartData.items)) {
+      // Fallback for { items: [...] }
+      cartItems = cartData.items;
+    } else if (Array.isArray(cartData)) {
+      // Fallback for direct array
+      cartItems = cartData;
     }
-    
-    // Try to enhance cart items, but don't fail if enhancement fails
-    try {
-      const enhancedItems = await Promise.all(
-        cartItems.map(async (item) => {
-          try {
-            // Only try to fetch product details if we have a valid product_id
-            if (!item.product_id) {
-              return {
-                ...item,
-                product_name: item.name || item.product_name || 'Unknown Product',
-                name: item.name || item.product_name || 'Unknown Product',
-                image: item.image || '/images/t-shirt1.png' // Fallback to default image
-              };
-            }
-            
-            // Fetch full product details for each cart item
-            const productResponse = await api.get(ENDPOINTS.PRODUCT_BY_ID(item.product_id));
-            const product = productResponse.data?.product || productResponse.data;
-            
-            if (!product) {
-              throw new Error('Product not found');
-            }
-            
-            // Enhance product with additional data
-            const enhancedProduct = enhanceProduct(product);
-            
-            // Merge cart item data with enhanced product data
-            return {
-              ...item,
-              product_name: enhancedProduct.name,
-              name: enhancedProduct.name,
-              title: enhancedProduct.name,
-              price: enhancedProduct.price || item.price || 0,
-              image: enhancedProduct.image || item.image || '/images/t-shirt1.png',
-              category: enhancedProduct.category,
-              size: item.size || enhancedProduct.size,
-              color: item.color || enhancedProduct.color,
-            };
-          } catch (productError) {
-            // Silent fallback - don't log warnings in production
-            if (import.meta.env.DEV) {
-              console.warn(`Failed to enhance cart item ${item.product_id}:`, productError.message);
-            }
-            // Return original cart item with safe fallback values
-            return {
-              ...item,
-              product_name: item.name || item.product_name || `Product ${item.product_id || 'Unknown'}`,
-              name: item.name || item.product_name || `Product ${item.product_id || 'Unknown'}`,
-              image: item.image || '/images/t-shirt1.png',
-              price: item.price || 0
-            };
+
+    console.log('🛒 Extracted cart items:', cartItems.length);
+
+    // Validate and enhance cart items
+    const validItems = cartItems.filter(item => 
+      item && 
+      typeof item === 'object' && 
+      item.id && 
+      item.product_id &&
+      item.quantity
+    );
+
+    console.log('🛒 Valid cart items:', validItems.length);
+
+    // Enhance cart items with product details and images
+    const enhancedItems = await Promise.allSettled(
+      validItems.map(async (item) => {
+        try {
+          // Use the product data that's already included in the response
+          let productDetails = item.product;
+          
+          // If product details aren't included, fetch them
+          if (!productDetails) {
+            console.log(`🛒 Fetching product details for ${item.product_id}`);
+            const productResponse = await api.get(`/products/${item.product_id}`);
+            productDetails = productResponse.data.product || productResponse.data;
           }
-        })
-      );
-      
-      return { items: enhancedItems };
-    } catch (enhancementError) {
-      // If enhancement fails completely, return basic cart items
-      if (import.meta.env.DEV) {
-        console.warn('Cart enhancement failed, returning basic cart items:', enhancementError.message);
-      }
-      
-      // Return unenhanced but safe cart items
-      const safeItems = cartItems.map(item => ({
-        ...item,
-        product_name: item.name || item.product_name || `Product ${item.product_id || 'Unknown'}`,
-        name: item.name || item.product_name || `Product ${item.product_id || 'Unknown'}`,
-        image: item.image || '/images/t-shirt1.png',
-        price: item.price || 0
-      }));
-      
-      return { items: safeItems };
-    }
-  } catch (err) {
-    console.error('Cart API call failed:', err);
-    throw new Error(err.response?.data?.error || err.message || 'Failed to fetch cart.');
+
+          // Enhance the product with local image
+          const enhancedProduct = enhanceProduct(productDetails);
+
+          return {
+            ...item,
+            product: enhancedProduct,
+            // Ensure we have the required fields
+            cartItemId: item.id,
+            productId: item.product_id || productDetails.id,
+            quantity: item.quantity,
+            price: productDetails.price,
+            name: productDetails.name,
+            image: enhancedProduct.image || enhancedProduct.imageUrl
+          };
+        } catch (error) {
+          console.warn(`🛒 Failed to enhance cart item ${item.id}:`, error.message);
+          // Return basic cart item without enhancement
+          return {
+            ...item,
+            product: item.product || {
+              id: item.product_id,
+              name: `Product ${item.product_id}`,
+              price: 0,
+              image: '/images/placeholder.png'
+            },
+            cartItemId: item.id,
+            productId: item.product_id,
+            quantity: item.quantity,
+            price: item.product?.price || 0,
+            name: item.product?.name || `Product ${item.product_id}`,
+            image: '/images/placeholder.png'
+          };
+        }
+      })
+    );
+
+    // Extract successful enhancements
+    const safeItems = enhancedItems
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value);
+
+    console.log('🛒 Successfully enhanced cart items:', safeItems.length);
+
+    return {
+      items: safeItems,
+      total: safeItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0)
+    };
+
+  } catch (error) {
+    console.error('🛒 Cart fetch failed:', error);
+    
+    // Return empty cart structure instead of throwing
+    return {
+      items: [],
+      total: 0
+    };
   }
 };
 
@@ -222,44 +242,136 @@ const enhanceProduct = (product) => {
 };
 
 // Products API (public endpoint) - No fallback data, strict API validation
-export const getProducts = async (params = {}) => {
+// export const getProducts = async (limit = 20) => {
+//   try {
+//     const response = await api.get(`${import.meta.env.VITE_API_URL}/products`, { params: { limit } });
+
+//     // Try to extract products from all possible fields
+//     let allProducts = [];
+//     if (response.data.products) {
+//       allProducts = response.data.products;
+//     } else if (response.data.latest_products || response.data.best_selling_products || response.data.recommended_products) {
+//       allProducts = [
+//         ...(response.data.latest_products || []),
+//         ...(response.data.best_selling_products || []),
+//         ...(response.data.recommended_products || [])
+//       ];
+//     } else if (Array.isArray(response.data)) {
+//       allProducts = response.data;
+//     }
+
+//     const validProducts = allProducts.filter(
+//       (product) => product && typeof product === 'object' && product.id
+//     );
+
+//     if (validProducts.length === 0) {
+//       throw new Error('No valid products received from API');
+//     }
+
+//     const enhancedProducts = validProducts.map(enhanceProduct);
+
+//     return {
+//       all: enhancedProducts
+//     };
+//   } catch (error) {
+//     console.error('Products API call failed:', error.message);
+//     throw new Error(
+//       error.response?.data?.message ||
+//       error.message ||
+//       'Failed to fetch products from API'
+//     );
+//   }
+// };
+
+export const getProducts = async (limit = 20) => {
   try {
-    const response = await api.get(ENDPOINTS.PRODUCTS, { params });
-
-    // Laravel response shape
-    const { latest_products, best_selling_products, recommended_products } = response.data;
-
-    if (!latest_products && !best_selling_products && !recommended_products) {
-      throw new Error('Invalid API response structure');
+    console.log('🔍 Fetching products from API...');
+    const response = await api.get(`${ENDPOINTS.PRODUCTS}?limit=${limit}`);
+    
+    console.log('📦 Raw API response:', response.data);
+    
+    // Handle multiple possible response formats
+    let allProducts = [];
+    
+    // Check if API returns categorized products (your current expected format)
+    if (response.data.latest_products || response.data.best_selling_products || response.data.recommended_products) {
+      const latest = response.data.latest_products || [];
+      const bestSelling = response.data.best_selling_products || [];
+      const recommended = response.data.recommended_products || [];
+      
+      allProducts = [...latest, ...bestSelling, ...recommended];
+      
+      console.log('📊 Found categorized products:', {
+        latest: latest.length,
+        bestSelling: bestSelling.length,
+        recommended: recommended.length,
+        total: allProducts.length
+      });
     }
-
-    // Combine products from API
-    const allProducts = [
-      ...(latest_products || []),
-      ...(best_selling_products || []),
-      ...(recommended_products || [])
-    ];
-
+    // Check if API returns simple products array
+    else if (response.data.products && Array.isArray(response.data.products)) {
+      allProducts = response.data.products;
+      console.log('📦 Found products array:', allProducts.length);
+    }
+    // Check if API returns direct array
+    else if (Array.isArray(response.data)) {
+      allProducts = response.data;
+      console.log('📦 Found direct array:', allProducts.length);
+    }
+    // Check for other possible structures
+    else if (response.data.data && Array.isArray(response.data.data)) {
+      allProducts = response.data.data;
+      console.log('📦 Found nested data array:', allProducts.length);
+    }
+    
     // Filter out invalid products
     const validProducts = allProducts.filter(
-      (product) => product && typeof product === 'object' && product.id
+      (product) => product && typeof product === 'object' && (product.id || product._id)
     );
-
+    
+    console.log('✅ Valid products after filtering:', validProducts.length);
+    
     if (validProducts.length === 0) {
-      throw new Error('No valid products received from API');
+      console.warn('⚠️ No valid products found in API response');
+      return {
+        latest_products: [],
+        best_selling_products: [],
+        recommended_products: [],
+        all: []
+      };
     }
-
-    // Enhance products
+    
+    // Enhance products with local images
     const enhancedProducts = validProducts.map(enhanceProduct);
-
+    
+    // For backward compatibility, distribute products across categories if not categorized
+    if (!response.data.latest_products && !response.data.best_selling_products && !response.data.recommended_products) {
+      const chunkSize = Math.ceil(enhancedProducts.length / 3);
+      return {
+        latest_products: enhancedProducts.slice(0, chunkSize),
+        best_selling_products: enhancedProducts.slice(chunkSize, chunkSize * 2),
+        recommended_products: enhancedProducts.slice(chunkSize * 2),
+        all: enhancedProducts
+      };
+    }
+    
+    // Return original categorized structure
     return {
-      latest: (latest_products || []).map(enhanceProduct),
-      bestSelling: (best_selling_products || []).map(enhanceProduct),
-      recommended: (recommended_products || []).map(enhanceProduct),
+      latest_products: (response.data.latest_products || []).map(enhanceProduct),
+      best_selling_products: (response.data.best_selling_products || []).map(enhanceProduct),
+      recommended_products: (response.data.recommended_products || []).map(enhanceProduct),
       all: enhancedProducts
     };
+    
   } catch (error) {
-    console.error('Products API call failed:', error.message);
+    console.error('❌ Products API call failed:', error);
+    console.error('📋 Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+    
     throw new Error(
       error.response?.data?.message ||
       error.message ||

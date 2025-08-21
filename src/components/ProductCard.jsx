@@ -4,7 +4,7 @@ import { ShoppingCart, Heart, ImageOff } from 'lucide-react';
 import { addToCart } from '../api/services';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useCart } from '../hooks/useCart';
-import { AppContext } from '../Context/AppContext';
+import { AppContext } from '../context/AppContext';
 
 function ProductCard({ product }) {
   const { handleError, showToast } = useErrorHandler();
@@ -20,44 +20,44 @@ function ProductCard({ product }) {
     if (isAuthenticated) {
       navigate(`/product/${product.id}`);
     } else {
-      handleError('Please log in to view product details.', 'error');
+      showToast('Please log in to view product details.', 'error');
       navigate('/login', { state: { from: `/product/${product.id}` } });
     }
   };
 
   const handleAddToCart = async () => {
-    try {
-      if (!isAuthenticated) {
-        handleError('Please log in to add items to your cart.', 'error');
-        return;
-      }
-      setAddingToCart(true);
-      console.log('ProductCard: Adding product to cart:', product.id);
-      
-      await addToCart(product.id, 1);
-      console.log('ProductCard: Successfully added to cart, now refreshing...');
-      
-      // Refresh cart context after successful API call
-      await fetchCart();
-      console.log('ProductCard: Cart refreshed');
-      
-      setAddedToCart(true);
-      handleError('Added to cart successfully!', 'success');
-      
-      // Reset success state after 2 seconds
-      setTimeout(() => {
-        setAddedToCart(false);
-      }, 2000);
-    } catch (error) {
-      handleError(error, {
-        fallbackMessage: 'Failed to add item to cart. Please try again.',
-        showToast: true,
-        context: 'add_to_cart'
-      });
-    } finally {
-      setAddingToCart(false);
-    }
-  };
+  if (!isAuthenticated) {
+    showToast('Please login to add items to cart', 'error');
+    return;
+  }
+
+  setAddingToCart(true);
+  try {
+    console.log('🛒 Adding product to cart:', product.id);
+    
+    // Add to cart via API
+    await addToCart(product.id, 1);
+    console.log('🛒 Successfully added to API cart');
+    
+    // Refresh cart context to sync with API
+    await fetchCart();
+    console.log('🛒 Cart refreshed from API');
+    
+    // Show success feedback
+    setAddedToCart(true);
+    showToast('Added to cart successfully!', 'success');
+    
+    // Reset feedback after delay
+    setTimeout(() => setAddedToCart(false), 2000);
+    
+  } catch (error) {
+    console.error('🛒 Failed to add to cart:', error);
+    handleError(error);
+    showToast('Failed to add to cart. Please try again.', 'error');
+  } finally {
+    setAddingToCart(false);
+  }
+};
 
   const handleImageLoad = () => {
     setImageLoading(false);

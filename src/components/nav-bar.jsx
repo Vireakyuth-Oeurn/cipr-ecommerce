@@ -1,7 +1,7 @@
 import { Bell, Home, Package, ShoppingBag, Menu, X } from "lucide-react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
-import { AppContext } from "../Context/AppContext";
+import { AppContext } from "../context/AppContext";
 import { useCart } from "../hooks/useCart";
 
 function Navbar() {
@@ -68,7 +68,7 @@ function Navbar() {
                             >
                                 Home
                             </Link>
-                            <Link
+                            {/* <Link
                                 to="/collections"
                                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                                     isActive('/collections') 
@@ -87,7 +87,7 @@ function Navbar() {
                                 }`}
                             >
                                 New Arrivals
-                            </Link>
+                            </Link> */}
                             <Link
                                 to="/products"
                                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${

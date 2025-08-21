@@ -21,40 +21,102 @@ function Home() {
   const trendingSearches = ['Basic T-Shirt', 'Denim Jacket', 'Polo Shirt', 'Chino Pants'];
   const recentSearches = ['Cotton Shirt', 'Black Jeans', 'Summer Collection'];
 
+//   useEffect(() => {
+//   const fetchHomeData = async () => {
+//     try {
+//       setLoading(true);
+//       console.log('🏠 Fetching home page products...');
+
+//       // Fetch products with correct destructuring
+//       const productsData = await getProducts(12); // Get more products for home page
+//       console.log('🏠 Received products data:', productsData);
+
+//       // Use the correct property names from getProducts response
+//       const {
+//         latest_products = [],
+//         best_selling_products = [],
+//         recommended_products = [],
+//       } = productsData;
+
+//       // Set products for each section
+//       setPopularProducts(best_selling_products.slice(0, 4));
+//       setFeaturedProducts(latest_products.slice(0, 4));
+//       setCollections(recommended_products.slice(0, 4));
+
+//       console.log('🏠 Set products:', {
+//         popular: best_selling_products.length,
+//         featured: latest_products.length,
+//         collections: recommended_products.length
+//       });
+
+//       setApiDown(false);
+//     } catch (error) {
+//       console.error('❌ Error fetching home data:', error);
+//       if (error.message.includes('500') || error.message.includes('Failed to fetch')) {
+//         setApiDown(true);
+//       }
+//       // Set empty arrays as fallback
+//       setPopularProducts([]);
+//       setFeaturedProducts([]);
+//       setCollections([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   fetchHomeData();
+// }, []);
   useEffect(() => {
   const fetchHomeData = async () => {
     try {
       setLoading(true);
       console.log('🏠 Fetching home page products...');
+      console.log('🏠 API URL:', import.meta.env.VITE_API_URL);
 
-      // Fetch products with correct destructuring
-      const productsData = await getProducts(12); // Get more products for home page
-      console.log('🏠 Received products data:', productsData);
+      // Fetch products with better error handling
+      const productsData = await getProducts(12);
+      console.log('🏠 Raw products response:', productsData);
+      console.log('🏠 Response type:', typeof productsData);
+      console.log('🏠 Response keys:', Object.keys(productsData || {}));
 
-      // Use the correct property names from getProducts response
-      const {
-        latest_products = [],
-        best_selling_products = [],
-        recommended_products = [],
-      } = productsData;
+      // Validate response structure
+      if (!productsData || typeof productsData !== 'object') {
+        console.error('🏠 Invalid response structure:', productsData);
+        throw new Error('Invalid API response: expected object, got ' + typeof productsData);
+      }
 
-      // Set products for each section
-      setPopularProducts(best_selling_products.slice(0, 4));
-      setFeaturedProducts(latest_products.slice(0, 4));
-      setCollections(recommended_products.slice(0, 4));
+      // Use the correct property names from getProducts response with safer access
+      const latest_products = Array.isArray(productsData.latest_products) ? productsData.latest_products : [];
+      const best_selling_products = Array.isArray(productsData.best_selling_products) ? productsData.best_selling_products : [];
+      const recommended_products = Array.isArray(productsData.recommended_products) ? productsData.recommended_products : [];
+      const all_products = Array.isArray(productsData.all) ? productsData.all : [];
 
-      console.log('🏠 Set products:', {
-        popular: best_selling_products.length,
-        featured: latest_products.length,
-        collections: recommended_products.length
+      console.log('🏠 Extracted arrays:', {
+        latest: latest_products.length,
+        bestSelling: best_selling_products.length,
+        recommended: recommended_products.length,
+        all: all_products.length
       });
 
+      // Set products for each section with fallbacks
+      setPopularProducts((best_selling_products.length > 0 ? best_selling_products : all_products).slice(0, 4));
+      setFeaturedProducts((latest_products.length > 0 ? latest_products : all_products).slice(0, 4));
+      setCollections((recommended_products.length > 0 ? recommended_products : all_products).slice(0, 4));
+
+      console.log('🏠 Successfully set products for home page');
       setApiDown(false);
     } catch (error) {
       console.error('❌ Error fetching home data:', error);
-      if (error.message.includes('500') || error.message.includes('Failed to fetch')) {
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error response:', error.response?.data);
+      
+      if (error.message.includes('500') || 
+          error.message.includes('Failed to fetch') || 
+          error.message.includes('Network Error') ||
+          error.message.includes('target must be an object')) {
         setApiDown(true);
       }
+      
       // Set empty arrays as fallback
       setPopularProducts([]);
       setFeaturedProducts([]);
@@ -126,23 +188,34 @@ function Home() {
   
   const fetchHomeData = async () => {
     try {
-      console.log('🔄 Retrying API call...');
+      console.log('🔄 Retrying home API call...');
+      console.log('🔄 API URL:', import.meta.env.VITE_API_URL);
+      
       const productsData = await getProducts(12);
+      console.log('🔄 Retry raw response:', productsData);
       
-      const {
-        latest_products = [],
-        best_selling_products = [],
-        recommended_products = []
-      } = productsData;
+      // Validate response structure
+      if (!productsData || typeof productsData !== 'object') {
+        console.error('🔄 Invalid retry response:', productsData);
+        throw new Error('Invalid API response on retry: expected object, got ' + typeof productsData);
+      }
       
-      setPopularProducts(best_selling_products.slice(0, 4));
-      setFeaturedProducts(latest_products.slice(0, 4));
-      setCollections(recommended_products.slice(0, 4));
+      // Use safer array access
+      const latest_products = Array.isArray(productsData.latest_products) ? productsData.latest_products : [];
+      const best_selling_products = Array.isArray(productsData.best_selling_products) ? productsData.best_selling_products : [];
+      const recommended_products = Array.isArray(productsData.recommended_products) ? productsData.recommended_products : [];
+      const all_products = Array.isArray(productsData.all) ? productsData.all : [];
+      
+      // Set products with fallbacks
+      setPopularProducts((best_selling_products.length > 0 ? best_selling_products : all_products).slice(0, 4));
+      setFeaturedProducts((latest_products.length > 0 ? latest_products : all_products).slice(0, 4));
+      setCollections((recommended_products.length > 0 ? recommended_products : all_products).slice(0, 4));
+      
       setApiDown(false);
-      
-      console.log('✅ Retry successful');
+      console.log('✅ Home retry successful');
     } catch (error) {
-      console.error('❌ Retry failed:', error);
+      console.error('❌ Home retry failed:', error);
+      console.error('❌ Retry error response:', error.response?.data);
       setApiDown(true);
       setPopularProducts([]);
       setFeaturedProducts([]);

@@ -3,9 +3,10 @@ import { Minus, Plus, Trash2, ShoppingCart, RefreshCw, AlertCircle } from 'lucid
 import { purchaseProducts } from '../api/services';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useCart } from '../hooks/useCart';
+import { showToast } from '../components/ui/simple-toast';
 
 const Cart = () => {
-  const { handleError, showToast } = useErrorHandler();
+  const { handleError } = useErrorHandler();
   const { 
     cartItems, 
     loading, 

@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+// Update the cart context to handle the API response correctly
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { AppContext } from './AppContext';
 import { getCart } from '../api/services';
-import { AppContext } from '../Context/AppContext';
 
 const CartContext = createContext();
 
@@ -10,106 +12,108 @@ export const CartProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { isAuthenticated } = useContext(AppContext);
 
-  // Calculate cart count whenever cart items change
+  // Calculate cart count whenever cartItems changes
   useEffect(() => {
-    const count = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
-    setCartCount(count);
+    const newCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
+    setCartCount(newCount);
+    console.log('🛒 Cart count updated:', newCount);
   }, [cartItems]);
 
-  const fetchCart = useCallback(async () => {
-    if (import.meta.env.DEV) {
-      console.log('CartContext fetchCart called, isAuthenticated:', isAuthenticated);
-    }
-    
-    if (!isAuthenticated) {
+  // Fetch cart when user logs in/out
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log('🛒 User authenticated, fetching cart...');
+      fetchCart();
+    } else {
+      console.log('🛒 User not authenticated, clearing cart...');
       setCartItems([]);
-      // Let useEffect handle count calculation
+      setCartCount(0);
+    }
+  }, [isAuthenticated]);
+
+  const fetchCart = async () => {
+    if (!isAuthenticated) {
+      console.log('🛒 Cannot fetch cart: user not authenticated');
       return;
     }
-    
+
     try {
       setLoading(true);
+      console.log('🛒 Fetching cart data...');
+      
       const response = await getCart();
+      console.log('🛒 Cart response:', response);
+
+      // Handle the enhanced cart response
+      const items = response.items || [];
+      console.log('🛒 Setting cart items:', items.length);
       
-      if (import.meta.env.DEV) {
-        console.log('CartContext fetchCart response:', response);
-      }
-      
-      const items = response.cart || response.items || response || [];
-      const validItems = Array.isArray(items) ? items : [];
-      
-      if (import.meta.env.DEV) {
-        console.log('CartContext setting items:', validItems);
-      }
-      
-      setCartItems(validItems);
-      // Let useEffect calculate the count based on quantities
+      setCartItems(items);
+
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Failed to fetch cart:', error);
-      }
+      console.error('🛒 Failed to fetch cart:', error);
       
-      // Check if it's an authentication error
-      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-        // User might have been logged out
+      // Handle authentication errors
+      if (error.response?.status === 401) {
+        console.log('🛒 Authentication error, clearing cart');
         setCartItems([]);
-        // Let useEffect handle count calculation
+        setCartCount(0);
       } else {
-        // Other errors - still reset cart to prevent UI issues
-        setCartItems([]);
-        // Let useEffect handle count calculation
+        // For other errors, keep existing cart state
+        console.log('🛒 Network error, keeping existing cart state');
       }
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
-
-  // Fetch cart when user is authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchCart();
-    } else {
-      // Clear cart when user logs out
-      setCartItems([]);
-      // Let useEffect handle count calculation
-    }
-  }, [isAuthenticated, fetchCart]);
+  };
 
   const addItemToCart = (item) => {
+    console.log('🛒 Adding item to local cart:', item);
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+      const existingItem = prevItems.find(cartItem => 
+        cartItem.productId === item.productId || cartItem.product_id === item.product_id
+      );
+      
       if (existingItem) {
+        // Update quantity of existing item
         return prevItems.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: (cartItem.quantity || 1) + (item.quantity || 1) }
+          (cartItem.productId === item.productId || cartItem.product_id === item.product_id)
+            ? { ...cartItem, quantity: cartItem.quantity + (item.quantity || 1) }
             : cartItem
         );
       } else {
+        // Add new item
         return [...prevItems, { ...item, quantity: item.quantity || 1 }];
       }
     });
   };
 
   const removeItemFromCart = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    console.log('🛒 Removing item from local cart:', itemId);
+    setCartItems(prevItems => prevItems.filter(item => 
+      item.id !== itemId && item.cartItemId !== itemId
+    ));
   };
 
   const updateItemQuantity = (itemId, quantity) => {
+    console.log('🛒 Updating item quantity:', itemId, quantity);
     if (quantity <= 0) {
       removeItemFromCart(itemId);
-      return;
+    } else {
+      setCartItems(prevItems =>
+        prevItems.map(item =>
+          (item.id === itemId || item.cartItemId === itemId)
+            ? { ...item, quantity }
+            : item
+        )
+      );
     }
-    
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
-      )
-    );
   };
 
   const clearCart = () => {
+    console.log('🛒 Clearing cart');
     setCartItems([]);
-    // Let useEffect handle count calculation
+    setCartCount(0);
   };
 
   const value = {
@@ -120,7 +124,7 @@ export const CartProvider = ({ children }) => {
     addItemToCart,
     removeItemFromCart,
     updateItemQuantity,
-    clearCart,
+    clearCart
   };
 
   return (
@@ -130,5 +134,4 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-export { CartContext };
-export default CartProvider;
+export default CartContext;

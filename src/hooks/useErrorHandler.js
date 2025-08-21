@@ -9,8 +9,13 @@ export function useErrorHandler() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleError = useCallback((error, fallbackMessage = 'An unexpected error occurred') => {
+  const handleError = useCallback((error, options = {}) => {
     console.error('Error:', error);
+    
+    const { 
+      fallbackMessage = 'An unexpected error occurred',
+      showToast: shouldShowToast = true
+    } = options;
     
     let userMessage = fallbackMessage;
     
@@ -66,8 +71,10 @@ export function useErrorHandler() {
       canRetry: error.response?.status >= 500 || !error.response
     });
 
-    // Show toast notification
-    showToast(userMessage, 'error');
+    // Show toast notification if requested
+    if (shouldShowToast) {
+      showToast(userMessage, 'error');
+    }
 
     return userMessage;
   }, []);
@@ -83,7 +90,7 @@ export function useErrorHandler() {
       const result = await asyncFunction();
       return result;
     } catch (error) {
-      handleError(error, `Failed to ${context}`);
+      handleError(error, { fallbackMessage: `Failed to ${context}` });
       throw error; // Re-throw for component-specific handling
     } finally {
       setIsLoading(false);
@@ -100,6 +107,7 @@ export function useErrorHandler() {
     handleError,
     clearError,
     withErrorHandling,
-    retry
+    retry,
+    showToast // Export showToast for convenience
   };
 }
