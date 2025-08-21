@@ -1,7 +1,7 @@
 import { Bell, Home, Package, ShoppingBag, Menu, X } from "lucide-react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
-import { AppContext } from "../context/AppContext";
+import { AppContext } from "../../Context/AppContext";
 import { useCart } from "../hooks/useCart";
 
 function Navbar() {
