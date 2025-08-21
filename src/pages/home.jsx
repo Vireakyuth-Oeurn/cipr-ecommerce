@@ -25,23 +25,37 @@ function Home() {
   const fetchHomeData = async () => {
     try {
       setLoading(true);
+      console.log('🏠 Fetching home page products...');
 
-      // Fetch all products
-      const { latest, bestSelling, recommended } = await getProducts({ limit: 4 });
+      // Fetch products with correct destructuring
+      const productsData = await getProducts(12); // Get more products for home page
+      console.log('🏠 Received products data:', productsData);
 
-      // Split into sections
-      const popularData = { products: bestSelling.slice(0, 4) };
-      const featuredData = { products: latest.slice(0, 4) };
-      const collectionsData = { products: recommended.slice(0, 4) };
+      // Use the correct property names from getProducts response
+      const {
+        latest_products = [],
+        best_selling_products = [],
+        recommended_products = [],
+      } = productsData;
 
-      setPopularProducts(popularData.products);
-      setFeaturedProducts(featuredData.products);
-      setCollections(collectionsData.products);
+      // Set products for each section
+      setPopularProducts(best_selling_products.slice(0, 4));
+      setFeaturedProducts(latest_products.slice(0, 4));
+      setCollections(recommended_products.slice(0, 4));
+
+      console.log('🏠 Set products:', {
+        popular: best_selling_products.length,
+        featured: latest_products.length,
+        collections: recommended_products.length
+      });
+
+      setApiDown(false);
     } catch (error) {
-      console.error('Error fetching home data:', error);
+      console.error('❌ Error fetching home data:', error);
       if (error.message.includes('500') || error.message.includes('Failed to fetch')) {
         setApiDown(true);
       }
+      // Set empty arrays as fallback
       setPopularProducts([]);
       setFeaturedProducts([]);
       setCollections([]);
@@ -50,8 +64,8 @@ function Home() {
     }
   };
 
-    fetchHomeData();
-  }, []);
+  fetchHomeData();
+}, []);
 
   const handleSearch = (query) => {
     if (query.trim()) {
@@ -107,38 +121,39 @@ function Home() {
   );
 
   const handleRetryApi = () => {
-    setApiDown(false);
-    setLoading(true);
-    // Re-fetch data
-    const fetchHomeData = async () => {
-      try {
-        // Fetch all products and then filter by real categories
-        const allProducts = await getProducts();
-        const products = allProducts.products || [];
-        
-        // Split products into different sections
-        const popularData = { products: products.slice(0, 4) };
-        const featuredData = { products: products.slice(4, 8) };
-        const collectionsData = { products: products.slice(8, 12) };
-        
-        setPopularProducts(popularData.products || []);
-        setFeaturedProducts(featuredData.products || []);
-        setCollections(collectionsData.products || []);
-        setApiDown(false);
-      } catch (error) {
-        console.error('Error fetching home data:', error);
-        if (error.message.includes('500') || error.message.includes('Failed to fetch')) {
-          setApiDown(true);
-        }
-        setPopularProducts([]);
-        setFeaturedProducts([]);
-        setCollections([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHomeData();
+  setApiDown(false);
+  setLoading(true);
+  
+  const fetchHomeData = async () => {
+    try {
+      console.log('🔄 Retrying API call...');
+      const productsData = await getProducts(12);
+      
+      const {
+        latest_products = [],
+        best_selling_products = [],
+        recommended_products = []
+      } = productsData;
+      
+      setPopularProducts(best_selling_products.slice(0, 4));
+      setFeaturedProducts(latest_products.slice(0, 4));
+      setCollections(recommended_products.slice(0, 4));
+      setApiDown(false);
+      
+      console.log('✅ Retry successful');
+    } catch (error) {
+      console.error('❌ Retry failed:', error);
+      setApiDown(true);
+      setPopularProducts([]);
+      setFeaturedProducts([]);
+      setCollections([]);
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  fetchHomeData();
+};
 
   return (
     <>

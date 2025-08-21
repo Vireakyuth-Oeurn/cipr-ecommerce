@@ -40,10 +40,17 @@ const Products = () => {
   useEffect(() => {
     const fetchProductsData = async () => {
       try {
+        console.log('📄 Products: Fetching products...');
         const data = await getProducts();
-        return data.products || [];
+        console.log('📄 Products: Received data:', data);
+        
+        // Use the 'all' array which contains all products combined
+        const allProducts = data.all || data.products || [];
+        console.log('📄 Products: Extracted products:', allProducts.length);
+        
+        return allProducts;
       } catch (err) {
-        console.error('Failed to fetch products:', err);
+        console.error('📄 Products: Failed to fetch products:', err);
         throw err;
       }
     };
@@ -64,10 +71,17 @@ const Products = () => {
   const fetchProducts = async () => {
     const fetchProductsData = async () => {
       try {
+        console.log('🔄 Products: Refetching products...');
         const data = await getProducts();
-        return data.products || [];
+        console.log('🔄 Products: Received data:', data);
+        
+        // Use the 'all' array which contains all products combined
+        const allProducts = data.all || data.products || [];
+        console.log('🔄 Products: Extracted products:', allProducts.length);
+        
+        return allProducts;
       } catch (err) {
-        console.error('Failed to fetch products:', err);
+        console.error('🔄 Products: Failed to fetch products:', err);
         throw err;
       }
     };
@@ -140,10 +154,17 @@ const Products = () => {
     // Re-fetch products
     const fetchProductsData = async () => {
       try {
+        console.log('🔄 Products: Retrying API...');
         const data = await getProducts();
-        return data.products || [];
+        console.log('🔄 Products: Retry received data:', data);
+        
+        // Use the 'all' array which contains all products combined
+        const allProducts = data.all || data.products || [];
+        console.log('🔄 Products: Retry extracted products:', allProducts.length);
+        
+        return allProducts;
       } catch (err) {
-        console.error('Failed to fetch products:', err);
+        console.error('🔄 Products: Retry failed:', err);
         if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
           setApiDown(true);
         }
