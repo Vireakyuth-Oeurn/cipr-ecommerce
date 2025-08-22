@@ -44,12 +44,12 @@ export default function PurchaseHistory() {
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
-    <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-      <h1 className="text-xl font-bold p-4">Purchase History</h1>
+    <div className="relative overflow-x-auto sm:rounded-lg p-12">
+      <h1 className="text-xl font-bold p-4">PURCHASE HISTORY</h1>
       {history.length === 0 ? (
         <p className="p-4">No sales history found.</p>
       ) : (
-        <table className="w-full p-4 mb-10 text-sm text-left  text-black ">
+        <table className="w-full p-4 text-sm text-left text-black my-5">
           <thead className="text-xs uppercase text-black bg-gray-100 ">
             <tr>
               <th scope="col" className="px-6 py-3">
