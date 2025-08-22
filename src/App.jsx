@@ -16,7 +16,7 @@ import { SimpleToaster } from './components/ui/simple-toaster';
 import LoginPage from './components/auth/login';
 import RegisterPage from './components/auth/register';
 import { AppContext } from './context/AppContext';
-import { CartProvider } from './context/CartContext'; // ✅ Fixed: Use named import
+import { CartProvider } from './context/CartContext';
 import PurchaseHistory from './pages/purhcase-history';
 
 function App() {
