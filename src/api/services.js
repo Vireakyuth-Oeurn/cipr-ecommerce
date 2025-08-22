@@ -19,21 +19,15 @@ export const getCart = async () => {
     console.log('🛒 Fetching cart...');
     const response = await api.get('/cart');
     console.log('🛒 Raw cart response:', response.data);
-
-    // Handle the actual API response structure
     const cartData = response.data;
     
-    // Extract cart items from the response
     let cartItems = [];
     
     if (cartData.cart && Array.isArray(cartData.cart)) {
-      // Your API returns { cart: [...] }
       cartItems = cartData.cart;
     } else if (cartData.items && Array.isArray(cartData.items)) {
-      // Fallback for { items: [...] }
       cartItems = cartData.items;
     } else if (Array.isArray(cartData)) {
-      // Fallback for direct array
       cartItems = cartData;
     }
 
@@ -707,3 +701,4 @@ export const getProductRecommendations = async (productId, limit = 8) => {
     throw new Error(error.response?.data?.message || error.message || 'Failed to fetch product recommendations from API');
   }
 };
+

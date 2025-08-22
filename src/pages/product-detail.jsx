@@ -367,7 +367,7 @@ function ProductDetail() {
 
         {/* Recommendations */}
         <div className="mt-16 pt-16 border-t border-gray-200">
-          <CiprRecommendation currentProductId={parseInt(id)} />
+          <CiprRecommendation />
         </div>
       </div>
     </div>
