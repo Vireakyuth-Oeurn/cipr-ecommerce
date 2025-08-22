@@ -15,22 +15,45 @@ const categoryImageMap = {
   // Jacket/Coat variations (2 images)
   'jacket': [
     '/images/jacket.png',
-    '/images/jacket1.png'
+    '/images/jacket.webp',
+    '/images/jacket2.webp',
+    '/images/jacket1.png',
+    '/images/jacket3.jpg',
+    '/images/jacket4.jpg',
+    '/images/jacket5.webp',
+    '/images/jacket6.jpg'
   ],
   'coat': [
-    '/images/jacket.png',
-    '/images/jacket1.png'
+    '/images/coat.webp',
+    '/images/coat1.webp',
+    '/images/coat2.jpg',
+    '/images/coat3.webp',
+    '/images/coat4.webp',
+    '/images/coat6.webp'
   ],
   
   // Shorts/Pants variations  
-  'short': ['/images/shorts.png'],
-  'shorts': ['/images/shorts.png'],
-  'pants': ['/images/pants.png'],
+  'short': [
+    '/images/shorts.png',
+    '/images/short1.webp',
+    '/images/short2.webp',
+    '/images/short3.jpg',
+    '/images/short4.webp',
+    '/images/short5.webp',
+  ],
+  'pants': [
+    '/images/pants.png',
+
+  ],
   
   // Pyjamas with dedicated images (2 images)
   'pyjamas': [
     '/images/pjamas.avif',
-    '/images/pjamas1.webp'
+    '/images/pjamas1.webp',
+    '/images/pyjamas1.webp',
+    '/images/pyjamas2.jpg',
+    '/images/pyjamas2.webp',
+    '/images/pyjamas3.webp'
   ],
   
   // Shoes with dedicated images (6 images)
@@ -50,17 +73,35 @@ const categoryImageMap = {
   ],
   
   // Fallback images for categories without specific images
-  'dress': ['/images/t-shirt1.png'], // Use t-shirt as fallback
+  'dress': [
+    '/images/dress1.jpg',
+    '/images/dress2.jpg',
+    '/images/dress3.webp',
+    '/images/dress4.jpg',
+    '/images/dress5.webp',
+    '/images/dress6.jpg'
+  ], // Use t-shirt as fallback
   'suit': [
-    '/images/jacket.png',
-    '/images/jacket1.png'
+    '/images/suit1.webp',
+    '/images/suit2.avif',
+    '/images/suit3.jpg',
+    '/images/suit4.jpg',
+    '/images/suit5.jpg',
+    '/images/suit6.jpg'
   ], // Use jacket variations
   'sportwear': [
-    '/images/t-shirt3.png', 
-    '/images/t-shirt6.png',
-    '/images/shorts.png'
+    '/images/sw1.avif', 
+    '/images/sw2.jpg',
+    '/images/sw3.webp',
+    '/images/sw4.avif'
   ],
-  'hat': ['/images/t-shirt2.png'] // Fallback until hat images added
+  'hat': [
+    '/images/hat.webp',
+    '/images/hat3.webp',
+    '/images/hat4.jpg',
+    '/images/hat5.jpg',
+    '/images/hat6.webp'
+  ] // Fallback until hat images added
 };
 
 // Get image for product category

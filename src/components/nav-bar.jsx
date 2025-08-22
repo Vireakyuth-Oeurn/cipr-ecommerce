@@ -124,7 +124,7 @@ function Navbar() {
                                 )}
                             </Link>
 
-                            <button 
+                            {/* <button 
                                 className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                                 aria-label="Notifications - 2 unread"
                             >
@@ -132,7 +132,7 @@ function Navbar() {
                                 <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
                                     2
                                 </span>
-                            </button>
+                            </button> */}
 
                             {isAuthenticated ? (
                                 <div className="flex items-center gap-4">
