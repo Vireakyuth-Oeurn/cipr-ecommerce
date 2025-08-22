@@ -483,11 +483,11 @@ export const getProductsByCategory = async (category, limit = 4) => {
 };
 
 // Search products - Requires authentication
-export const searchProducts = async (searchTerm, limit = 10) => {
+export const searchProducts = async (search, limit = 10) => {
   try {
     const response = await api.get(ENDPOINTS.PRODUCT_SEARCH, {
       params: {
-        search: searchTerm,
+        search: search,
         limit: limit
       }
     });
