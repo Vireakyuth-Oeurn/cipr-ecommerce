@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, Star, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { getProductById, addToCart } from '../api/services';
 import CiprRecommendation from '../components/CiprRecommendation';
+import Recommendation from '../components/Recommendation';
 import { useCart } from '../hooks/useCart';
 
 function ProductDetail() {
@@ -368,6 +369,9 @@ function ProductDetail() {
         {/* Recommendations */}
         <div className="mt-16 pt-16 border-t border-gray-200">
           <CiprRecommendation />
+        </div>
+         <div className="mt-16 pt-16 border-t border-gray-200">
+          <Recommendation />
         </div>
       </div>
     </div>
