@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, ChevronDown, ChevronUp, RefreshCw, AlertCircle } from 'lucide-react';
-import { getProducts } from '../api/services';
+import { searchProducts } from '../api/services';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 import ScrollToTop from '../components/ScrollToTop';
@@ -29,98 +29,195 @@ const Products = () => {
     ratings: false
   });
 
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState('NEW');
   const [searchQuery, setSearchQuery] = useState('');
   const [apiDown, setApiDown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Debounce search query for better performance
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  // Function to fetch products based on category or search
+  const fetchProductsData = async (category = 'ALL', searchTerm = '') => {
+    try {
+      let data;
+      
+      // If there's a search term, use search API
+      if (searchTerm.trim()) {
+        console.log('Searching for:', searchTerm);
+        data = await searchProducts(searchTerm, 50); // Get more results for search
+      }
+      // If category is one of the special categories, use search API with keywords
+      else if (category === 'NEW' || category === 'LATEST') {
+        console.log('Fetching new products');
+        data = await searchProducts('new', 50);
+      }
+      else if (category === 'BEST SELLERS') {
+        console.log('Fetching best sellers');
+        data = await searchProducts('best', 50);
+      }
+      else if (category === 'RECOMMENDED') {
+        console.log('Fetching recommended products');
+        data = await searchProducts('recommended', 50);
+      }
+      // For ALL or other categories, get all products and filter client-side
+      else {
+        console.log('Fetching product category:', category);
+        data = await searchProducts(category.toLowerCase(), 50);
+      }
+      
+      let filteredProducts = data.products || [];
+      
+      // Apply category filter client-side for non-special categories
+      if (category !== 'ALL' && !['NEW', 'LATEST', 'BEST SELLERS', 'RECOMMENDED'].includes(category)) {
+        filteredProducts = filteredProducts.filter(product => 
+          product.category && product.category.toUpperCase() === category.toUpperCase()
+        );
+      }
+      
+      return filteredProducts;
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+      throw err;
+    }
+  };
 
   // Initialize products on component mount
   useEffect(() => {
-    const fetchProductsData = async () => {
+    const loadInitialProducts = async () => {
       try {
-        console.log('📄 Products: Fetching products...');
-        const data = await getProducts();
-        console.log('📄 Products: Received data:', data);
-        
-        // Use the 'all' array which contains all products combined
-        const allProducts = data.all || data.products || [];
-        console.log('📄 Products: Extracted products:', allProducts.length);
-        
-        return allProducts;
+        const products = await fetchProductsData(selectedCategory);
+        return products;
       } catch (err) {
-        console.error('📄 Products: Failed to fetch products:', err);
+        // Check if it's an API server error
+        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+          setApiDown(true);
+        }
         throw err;
       }
     };
 
-    executeProductFetch(fetchProductsData).catch((err) => {
-      // Check if it's an API server error
-      if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
-        setApiDown(true);
-      }
+    executeProductFetch(loadInitialProducts).catch((err) => {
       handleError(err, {
         fallbackMessage: 'Failed to load products. Please try again.',
         showToast: true,
-        context: 'product_fetch'
+        context: 'initial_product_fetch'
       });
     });
-  }, [executeProductFetch, handleError]);
+  }, []); // Only run on mount
 
-  const fetchProducts = async () => {
-    const fetchProductsData = async () => {
+  // Handle category changes
+  useEffect(() => {
+    // Don't fetch if we're currently searching by text
+    if (debouncedSearchQuery.trim()) {
+      return;
+    }
+
+    const loadCategoryProducts = async () => {
       try {
-        console.log('🔄 Products: Refetching products...');
-        const data = await getProducts();
-        console.log('🔄 Products: Received data:', data);
-        
-        // Use the 'all' array which contains all products combined
-        const allProducts = data.all || data.products || [];
-        console.log('🔄 Products: Extracted products:', allProducts.length);
-        
-        return allProducts;
+        const products = await fetchProductsData(selectedCategory);
+        return products;
       } catch (err) {
-        console.error('🔄 Products: Failed to fetch products:', err);
+        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+          setApiDown(true);
+        }
         throw err;
       }
     };
 
-    return executeProductFetch(fetchProductsData).catch((err) => {
+    executeProductFetch(loadCategoryProducts).catch((err) => {
       handleError(err, {
-        fallbackMessage: 'Failed to load products. Please try again.',
+        fallbackMessage: 'Failed to load products for selected category.',
+        showToast: true,
+        context: 'category_filter'
+      });
+    });
+  }, [selectedCategory, executeProductFetch, handleError]);
+
+  // Handle search query changes
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) {
+      // If search is cleared, reload category products
+      const loadCategoryProducts = async () => {
+        try {
+          const products = await fetchProductsData(selectedCategory);
+          return products;
+        } catch (err) {
+          if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+            setApiDown(true);
+          }
+          throw err;
+        }
+      };
+
+      executeProductFetch(loadCategoryProducts).catch((err) => {
+        handleError(err, {
+          fallbackMessage: 'Failed to reload products.',
+          showToast: true,
+          context: 'search_clear'
+        });
+      });
+      return;
+    }
+
+    // Perform search
+    const performSearch = async () => {
+      setIsSearching(true);
+      try {
+        const products = await fetchProductsData(selectedCategory, debouncedSearchQuery);
+        return products;
+      } catch (err) {
+        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+          setApiDown(true);
+        }
+        throw err;
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    executeProductFetch(performSearch).catch((err) => {
+      setIsSearching(false);
+      handleError(err, {
+        fallbackMessage: 'Search failed. Please try again.',
+        showToast: true,
+        context: 'product_search'
+      });
+    });
+  }, [debouncedSearchQuery, executeProductFetch, handleError]);
+
+  const handleRetry = () => {
+    const retryFetch = async () => {
+      try {
+        const products = await fetchProductsData(selectedCategory, debouncedSearchQuery);
+        return products;
+      } catch (err) {
+        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+          setApiDown(true);
+        }
+        throw err;
+      }
+    };
+
+    executeProductFetch(retryFetch).catch((err) => {
+      handleError(err, {
+        fallbackMessage: 'Retry failed. Please try again.',
         showToast: true,
         context: 'product_fetch_retry'
       });
     });
   };
 
-  const handleRetry = () => {
-    fetchProducts();
+  const handleRetryApi = () => {
+    setApiDown(false);
+    handleRetry();
   };
 
-  // Enhanced filtering with better category matching
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                         (product.description && product.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
-                         (product.category && product.category.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
-    
-    let matchesCategory = true;
-    if (selectedCategory !== 'ALL') {
-      if (selectedCategory === 'NEW' || selectedCategory === 'LATEST') {
-        // Show latest products (this would need API categorization)
-        matchesCategory = true; // For now, show all as we can't distinguish without timestamps
-      } else if (selectedCategory === 'BEST SELLERS') {
-        matchesCategory = true; // Similar issue - need API categorization
-      } else if (selectedCategory === 'RECOMMENDED') {
-        matchesCategory = true;
-      } else {
-        matchesCategory = product.category === selectedCategory;
-      }
-    }
-    
-    return matchesSearch && matchesCategory;
-  });
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    // Clear search when changing category
+    setSearchQuery('');
+  };
 
   const toggleFilter = (filter) => {
     setActiveFilters(prev => ({
@@ -130,13 +227,14 @@ const Products = () => {
   };
 
   const categories = [
-    'ALL', 'NEW', 'BEST SELLERS', 'RECOMMENDED', 'COAT', 'SUIT', 'SHOES', 
-    'PYJAMAS', 'SHORT', 'DRESS', 'UNDIES', 'JACKET', 'T-SHIRT', 'SPORTWEAR', 'HAT'
+    'NEW', 'BEST SELLERS', 'RECOMMENDED', 'SUIT', 'SHOES', 
+    'PYJAMAS', 'SHORT', 'DRESS', 'T-SHIRT'
   ];
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', '2X'];
 
-  if (loading) {
+  // Show loading state
+  if (loading && !products.length) {
     return (
       <div className="bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -148,38 +246,6 @@ const Products = () => {
       </div>
     );
   }
-
-  const handleRetryApi = () => {
-    setApiDown(false);
-    // Re-fetch products
-    const fetchProductsData = async () => {
-      try {
-        console.log('🔄 Products: Retrying API...');
-        const data = await getProducts();
-        console.log('🔄 Products: Retry received data:', data);
-        
-        // Use the 'all' array which contains all products combined
-        const allProducts = data.all || data.products || [];
-        console.log('🔄 Products: Retry extracted products:', allProducts.length);
-        
-        return allProducts;
-      } catch (err) {
-        console.error('🔄 Products: Retry failed:', err);
-        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
-          setApiDown(true);
-        }
-        throw err;
-      }
-    };
-
-    executeProductFetch(fetchProductsData).catch((err) => {
-      handleError(err, {
-        fallbackMessage: 'Failed to load products. Please try again.',
-        showToast: true,
-        context: 'product_fetch_retry'
-      });
-    });
-  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -196,7 +262,18 @@ const Products = () => {
 
         {/* Page Title */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">PRODUCTS</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">PRODUCTS</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {isSearching ? (
+                'Searching...'
+              ) : debouncedSearchQuery.trim() ? (
+                `Search results for "${debouncedSearchQuery}" (${products.length} found)`
+              ) : (
+                `${selectedCategory} (${products.length})`
+              )}
+            </p>
+          </div>
           {error && (
             <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded text-sm flex items-center gap-2">
               <AlertCircle size={16} />
@@ -220,6 +297,21 @@ const Products = () => {
           <div className="lg:w-1/4">
             <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
               <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+
+              {/* Search Results Info */}
+              {debouncedSearchQuery.trim() && (
+                <div className="p-3 bg-blue-50 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    <strong>Search:</strong> "{debouncedSearchQuery}"
+                  </p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
 
               {/* Size Filter */}
               <div>
@@ -249,11 +341,11 @@ const Products = () => {
                   <div className="mt-3 space-y-2">
                     <label className="flex items-center">
                       <input type="checkbox" className="rounded border-gray-300" />
-                      <span className="ml-2 text-sm text-gray-600">Available (450)</span>
+                      <span className="ml-2 text-sm text-gray-600">Available</span>
                     </label>
                     <label className="flex items-center">
                       <input type="checkbox" className="rounded border-gray-300" />
-                      <span className="ml-2 text-sm text-gray-600">Out Of Stock (18)</span>
+                      <span className="ml-2 text-sm text-gray-600">Out Of Stock</span>
                     </label>
                   </div>
                 )}
@@ -341,6 +433,11 @@ const Products = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
               />
+              {isSearching && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <RefreshCw className="h-4 w-4 text-gray-400 animate-spin" />
+                </div>
+              )}
             </div>
 
             {/* Category Tabs */}
@@ -348,8 +445,9 @@ const Products = () => {
               {categories.map((category) => (
                 <button
                   key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  onClick={() => handleCategoryChange(category)}
+                  disabled={loading || isSearching}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-50 ${
                     selectedCategory === category
                       ? 'bg-gray-900 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -360,15 +458,27 @@ const Products = () => {
               ))}
             </div>
 
+            {/* Loading indicator for search/filter */}
+            {(loading || isSearching) && products.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-md">
+                <div className="flex items-center">
+                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin mr-2" />
+                  <span className="text-sm text-blue-800">
+                    {isSearching ? 'Searching...' : 'Loading...'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {loading ? (
-                // Show skeleton loading states
+              {loading && !products.length ? (
+                // Show skeleton loading states for initial load
                 Array.from({ length: 6 }).map((_, index) => (
                   <ProductSkeleton key={index} />
                 ))
-              ) : filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
+              ) : products.length > 0 ? (
+                products.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -382,7 +492,20 @@ const Products = () => {
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                  <p className="text-gray-600">Try adjusting your search or filters</p>
+                  <p className="text-gray-600">
+                    {debouncedSearchQuery.trim() 
+                      ? `No results found for "${debouncedSearchQuery}"`
+                      : 'Try adjusting your search or filters'
+                    }
+                  </p>
+                  {debouncedSearchQuery.trim() && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="mt-3 text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Clear search and show {selectedCategory.toLowerCase()} products
+                    </button>
+                  )}
                 </div>
               )}
             </div>
