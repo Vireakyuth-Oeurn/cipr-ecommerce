@@ -10,7 +10,7 @@ export default function PurchaseHistory() {
       try {
         const token = localStorage.getItem("token"); 
         if (!token) {
-          setError("No token found, please login.");
+          setError("Please login.");
           setLoading(false);
           return;
         }

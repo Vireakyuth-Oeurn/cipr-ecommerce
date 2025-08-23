@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { getProductImage } from "../utils/imageMapping"; // <-- added
+
 
 export default function CiprRecommendation() {
   const [recommendations, setRecommendations] = useState([]);
@@ -69,6 +71,23 @@ export default function CiprRecommendation() {
     }
   };
 
+  // Resolve a category string from product fields so imageMapping can pick a local image
+  const resolveCategory = (product) => {
+    if (!product) return null;
+    if (product.category) return String(product.category).toLowerCase();
+    if (product.type) return String(product.type).toLowerCase();
+
+    // Try parse from name like "pyjamas - 1" or "jacket - 393"
+    if (product.name) {
+      const name = String(product.name).toLowerCase();
+      // take first token (word) as category
+      const token = name.split(/[^a-z0-9]+/i)[0];
+      return token || null;
+    }
+
+    return null;
+  };
+
   if (loading) return <p>Loading recommendations...</p>;
   if (error) return <p className="text-red-500">Error: {error}</p>;
 
@@ -116,9 +135,19 @@ export default function CiprRecommendation() {
                 {/* Product Image (fallback to placeholder if no image) */}
                 <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4">
                   <img
-                    src={product.image || "https://via.placeholder.com/300"}
+                    src={(() => {
+                      const category = resolveCategory(product);
+                      const apiImage = product.image || product.imageUrl || product.img || product.thumbnail || null;
+                      return getProductImage(category, apiImage, product.id);
+                    })()}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      // prevent infinite loop if placeholder missing
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/placeholder-product.png';
+                      console.warn('Image failed to load, using placeholder for product id:', product.id);
+                    }}
                   />
                 </div>
 
