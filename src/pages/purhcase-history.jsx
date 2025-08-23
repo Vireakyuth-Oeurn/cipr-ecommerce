@@ -47,7 +47,7 @@ export default function PurchaseHistory() {
     <div className="relative overflow-x-auto sm:rounded-lg p-12">
       <h1 className="text-xl font-bold p-4">PURCHASE HISTORY</h1>
       {history.length === 0 ? (
-        <p className="p-4">No sales history found.</p>
+        <p className="p-4">No order history found.</p>
       ) : (
         <table className="w-full p-4 text-sm text-left text-black my-5">
           <thead className="text-xs uppercase text-black bg-gray-100 ">
