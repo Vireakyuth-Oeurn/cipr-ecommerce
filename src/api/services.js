@@ -1,7 +1,6 @@
 import { api, ENDPOINTS } from './index';
 import { getProductImage, getAllImagesForCategory } from '../utils/imageMapping';
 
-// Cart management
 export const addToCart = async (productId, quantity = 1) => {
   try {
     const response = await api.post(ENDPOINTS.CART, {
@@ -16,9 +15,7 @@ export const addToCart = async (productId, quantity = 1) => {
 
 export const getCart = async () => {
   try {
-    console.log('🛒 Fetching cart...');
     const response = await api.get('/cart');
-    console.log('🛒 Raw cart response:', response.data);
     const cartData = response.data;
     
     let cartItems = [];
@@ -31,9 +28,6 @@ export const getCart = async () => {
       cartItems = cartData;
     }
 
-    console.log('🛒 Extracted cart items:', cartItems.length);
-
-    // Validate and enhance cart items
     const validItems = cartItems.filter(item => 
       item && 
       typeof item === 'object' && 
@@ -42,29 +36,22 @@ export const getCart = async () => {
       item.quantity
     );
 
-    console.log('🛒 Valid cart items:', validItems.length);
-
-    // Enhance cart items with product details and images
     const enhancedItems = await Promise.allSettled(
       validItems.map(async (item) => {
         try {
-          // Use the product data that's already included in the response
           let productDetails = item.product;
           
-          // If product details aren't included, fetch them
           if (!productDetails) {
             console.log(`🛒 Fetching product details for ${item.product_id}`);
             const productResponse = await api.get(`/products/${item.product_id}`);
             productDetails = productResponse.data.product || productResponse.data;
           }
 
-          // Enhance the product with local image
           const enhancedProduct = enhanceProduct(productDetails);
 
           return {
             ...item,
             product: enhancedProduct,
-            // Ensure we have the required fields
             cartItemId: item.id,
             productId: item.product_id || productDetails.id,
             quantity: item.quantity,
@@ -74,7 +61,6 @@ export const getCart = async () => {
           };
         } catch (error) {
           console.warn(`🛒 Failed to enhance cart item ${item.id}:`, error.message);
-          // Return basic cart item without enhancement
           return {
             ...item,
             product: item.product || {
@@ -94,7 +80,6 @@ export const getCart = async () => {
       })
     );
 
-    // Extract successful enhancements
     const safeItems = enhancedItems
       .filter(result => result.status === 'fulfilled')
       .map(result => result.value);
@@ -109,7 +94,6 @@ export const getCart = async () => {
   } catch (error) {
     console.error('🛒 Cart fetch failed:', error);
     
-    // Return empty cart structure instead of throwing
     return {
       items: [],
       total: 0
@@ -117,7 +101,6 @@ export const getCart = async () => {
   }
 };
 
-// Update cart item quantity
 export const updateCartItemQuantity = async (cartItemId, quantity) => {
   try {
     const response = await api.put(`${ENDPOINTS.CART}/${cartItemId}`, {
@@ -129,7 +112,6 @@ export const updateCartItemQuantity = async (cartItemId, quantity) => {
   }
 };
 
-// Remove item from cart
 export const removeCartItem = async (cartItemId) => {
   try {
     const response = await api.delete(`${ENDPOINTS.CART}/${cartItemId}`);
@@ -139,7 +121,6 @@ export const removeCartItem = async (cartItemId) => {
   }
 };
 
-// Clear entire cart
 export const clearCart = async () => {
   try {
     const response = await api.delete(ENDPOINTS.CART);
@@ -149,7 +130,6 @@ export const clearCart = async () => {
   }
 };
 
-// Purchase history
 export const getPurchaseHistory = async () => {
   try {
     const response = await api.get(ENDPOINTS.SALES);
@@ -170,14 +150,11 @@ export const purchaseProducts = async (cartIds) => {
   }
 };
 
-// Enhanced product data processing (no fallback data, only process valid API responses)
 const enhanceProduct = (product) => {
-  // Only process if product has required fields from API
   if (!product || !product.id) {
     throw new Error('Invalid product data from API');
   }
   
-  // Handle description - it can be an array or string from API
   let descriptionArray = [];
   if (Array.isArray(product.description)) {
     descriptionArray = product.description;
@@ -185,22 +162,18 @@ const enhanceProduct = (product) => {
     descriptionArray = product.description.split(' ').filter(word => word.trim().length > 0);
   }
   
-  // Known categories from the API
   const validCategories = ['t-shirt', 'dress', 'suit', 'short', 'jacket', 'sportwear', 'shoes', 'coat', 'hat', 'pyjamas', 'undies'];
   
-  // Extract category (first element in description array is usually the category)
   const categoryFromDescription = descriptionArray[0]?.toLowerCase();
   const category = validCategories.includes(categoryFromDescription) 
     ? categoryFromDescription.toUpperCase() 
     : 'UNCATEGORIZED';
   
-  // Extract attributes from description array
   const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
   const colors = ['black', 'white', 'blue', 'red', 'green', 'yellow'];
   const genders = ['M', 'F', 'male', 'female', 'kid', 'adult', 'teen', 'baby'];
   const seasons = ['spring', 'summer', 'fall', 'winter'];
   
-  // Find attributes in the description array
   const extractedSize = descriptionArray.find(item => 
     sizes.some(size => size.toLowerCase() === item.toLowerCase())
   );
@@ -222,60 +195,14 @@ const enhanceProduct = (product) => {
     color: extractedColor,
     gender: extractedGender,
     season: extractedSeason,
-    // Convert price to number for better filtering/sorting
     price: parseFloat(product.price) || 0,
-    // Use local images based on category, fallback to API image
     image: getProductImage(category, product.image, product.id),
-    // For product detail pages - get all available images for the category
     images: getAllImagesForCategory(category),
-    // Keep original description for display
     descriptionText: Array.isArray(product.description) 
       ? product.description.join(' ') 
       : product.description || ''
   };
 };
-
-// Products API (public endpoint) - No fallback data, strict API validation
-// export const getProducts = async (limit = 20) => {
-//   try {
-//     const response = await api.get(`${import.meta.env.VITE_API_URL}/products`, { params: { limit } });
-
-//     // Try to extract products from all possible fields
-//     let allProducts = [];
-//     if (response.data.products) {
-//       allProducts = response.data.products;
-//     } else if (response.data.latest_products || response.data.best_selling_products || response.data.recommended_products) {
-//       allProducts = [
-//         ...(response.data.latest_products || []),
-//         ...(response.data.best_selling_products || []),
-//         ...(response.data.recommended_products || [])
-//       ];
-//     } else if (Array.isArray(response.data)) {
-//       allProducts = response.data;
-//     }
-
-//     const validProducts = allProducts.filter(
-//       (product) => product && typeof product === 'object' && product.id
-//     );
-
-//     if (validProducts.length === 0) {
-//       throw new Error('No valid products received from API');
-//     }
-
-//     const enhancedProducts = validProducts.map(enhanceProduct);
-
-//     return {
-//       all: enhancedProducts
-//     };
-//   } catch (error) {
-//     console.error('Products API call failed:', error.message);
-//     throw new Error(
-//       error.response?.data?.message ||
-//       error.message ||
-//       'Failed to fetch products from API'
-//     );
-//   }
-// };
 
 export const getProducts = async (limit = 20) => {
   try {

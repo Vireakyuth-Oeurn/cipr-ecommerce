@@ -1,7 +1,6 @@
 // API client configuration and utilities
 import axios from 'axios';
 
-// Create centralized API client
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
@@ -10,19 +9,16 @@ export const api = axios.create({
   },
 });
 
-// Debug logging for development
 if (import.meta.env.DEV) {
   console.log('🔧 API Configuration:');
   console.log('- Base URL:', import.meta.env.VITE_API_URL || '/api');
   console.log('- Using Vite Proxy:', !import.meta.env.VITE_API_URL);
   
-  // Log API requests in development
   api.interceptors.request.use((config) => {
     console.log(`📡 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   });
   
-  // Log API responses in development
   api.interceptors.response.use(
     (response) => {
       console.log(`✅ API Response: ${response.status} ${response.config.url}`);
@@ -35,7 +31,6 @@ if (import.meta.env.DEV) {
   );
 }
 
-// Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -44,7 +39,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// API endpoints constants
 export const ENDPOINTS = {
   // Auth
   LOGIN: '/login',

@@ -50,11 +50,6 @@ function LoginPage() {
                     setErrors(validationErrors);
                 } else if (data.errors) {
                     setErrors(data.errors);
-                // } else if (data.error) {
-                //     setErrors({ general: data.error.message || 'Login failed' });
-                // } else {
-                //     setErrors({ general: data.message || 'Login failed' });
-                // }
                 }
             }
         } catch (error) {
@@ -76,87 +71,178 @@ function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white grid grid-cols-3">
-            <div className="flex bg-white">
-                <img src={leftlogo} alt="Login Visual" className="max-w-full h-auto" />
+        <div className="min-h-screen bg-white">
+            {/* Mobile Layout (default) */}
+            <div className="lg:hidden">
+                {/* Mobile Header with Logo */}
+                <div className="flex items-center justify-center py-6 px-4 bg-white">
+                    <img src={logo} alt="Logo" className="h-16 w-auto" />
+                </div>
+
+                {/* Mobile Form Container */}
+                <div className="px-4 pb-8">
+                    <div className="max-w-sm mx-auto">
+                        <div className="text-center mb-6">
+                            <h2 className="text-xl font-bold text-black mb-2">WELCOME BACK</h2>
+                            <p className="text-sm text-gray-600 font-medium">SIGN IN</p>
+                        </div>
+
+                        {errors.general && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                <p className="text-red-600 text-sm">{errors.general}</p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleLogin} className="w-full">
+                            <div className="space-y-4">
+                                <div>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="Enter your email"
+                                        className={`w-full px-4 py-3 border rounded-none text-sm focus:outline-none focus:border-black transition-colors ${
+                                            errors.email ? 'border-red-300' : 'border-gray-300'
+                                        }`}
+                                        disabled={isLoading}
+                                    />
+                                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email[0]}</p>}
+                                </div>
+                               
+                                <div>
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            placeholder="Enter your password"
+                                            className={`w-full px-4 py-3 border rounded-none text-sm focus:outline-none focus:border-black transition-colors pr-12 ${
+                                                errors.password ? 'border-red-300' : 'border-gray-300'
+                                            }`}
+                                            disabled={isLoading}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            disabled={isLoading}
+                                        >
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
+                                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password[0]}</p>}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full bg-black text-white py-3 px-4 font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? 'Logging in...' : 'Log In'}
+                                </button>
+                            </div>
+
+                            <div className="mt-6 text-center">
+                                <p className="text-sm text-gray-600">
+                                    Don't have an account?{' '}
+                                    <a href="/register" className="text-black font-medium underline hover:no-underline">
+                                        Sign Up
+                                    </a>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            <div className="flex items-center justify-center">
-                <form onSubmit={handleLogin} className="max-w-md w-full">
-                    <div className="text-center mb-8">
-                        <h2 className="text-xl font-bold text-black mb-2">WELCOME BACK</h2>
-                        <p className="text-sm text-gray-600 font-medium">SIGN IN</p>
-                    </div>
+            {/* Desktop Layout (lg and above) */}
+            <div className="hidden lg:grid lg:grid-cols-3 min-h-screen">
+                {/* Left Column - Left Logo Image */}
+                <div className="flex bg-white items-center justify-center">
+                    <img src={leftlogo} alt="Login Visual" className="max-w-full h-auto object-cover" />
+                </div>
 
-                    {errors.general && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                            <p className="text-red-600 text-sm">{errors.general}</p>
+                {/* Center Column - Form */}
+                <div className="flex items-center justify-center">
+                    <form onSubmit={handleLogin} className="max-w-md w-full">
+                        <div className="text-center mb-8">
+                            <h2 className="text-2xl font-bold text-black mb-2">WELCOME BACK</h2>
+                            <p className="text-sm text-gray-600 font-medium">SIGN IN</p>
                         </div>
-                    )}
 
-                    <div className="space-y-4">
-                        <div>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="Enter your email"
-                                className={`w-full px-4 py-3 border rounded-none text-sm focus:outline-none focus:border-black transition-colors ${
-                                    errors.email ? 'border-red-300' : 'border-gray-300'
-                                }`}
-                                disabled={isLoading}
-                            />
-                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email[0]}</p>}
-                        </div>
-                       
-                        <div>
-                            <div className="relative">
+                        {errors.general && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                <p className="text-red-600 text-sm">{errors.general}</p>
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <div>
                                 <input
-                                    type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    value={formData.password}
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
                                     onChange={handleChange}
-                                    placeholder="Enter your password"
-                                    className={`w-full px-4 py-3 border rounded-none text-sm focus:outline-none focus:border-black transition-colors pr-12 ${
-                                        errors.password ? 'border-red-300' : 'border-gray-300'
+                                    placeholder="Enter your email"
+                                    className={`w-full px-4 py-3 border rounded-none text-sm focus:outline-none focus:border-black transition-colors ${
+                                        errors.email ? 'border-red-300' : 'border-gray-300'
                                     }`}
                                     disabled={isLoading}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    disabled={isLoading}
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email[0]}</p>}
                             </div>
-                            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password[0]}</p>}
+                           
+                            <div>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        placeholder="Enter your password"
+                                        className={`w-full px-4 py-3 border rounded-none text-sm focus:outline-none focus:border-black transition-colors pr-12 ${
+                                            errors.password ? 'border-red-300' : 'border-gray-300'
+                                        }`}
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        disabled={isLoading}
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password[0]}</p>}
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-black text-white py-3 px-4 font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? 'Logging in...' : 'Log In'}
+                            </button>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full bg-black text-white py-3 px-4 font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isLoading ? 'Logging in...' : 'Log In'}
-                        </button>
-                    </div>
+                        <div className="mt-8 text-center">
+                            <p className="text-sm text-gray-600">
+                                Don't have an account?{' '}
+                                <a href="/register" className="text-black font-medium underline hover:no-underline">
+                                    Sign Up
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
 
-                    <div className="mt-8 text-center">
-                        <p className="text-sm text-gray-600">
-                            Don't have an account?{' '}
-                            <a href="/register" className="text-black font-medium underline hover:no-underline">
-                                Sign Up
-                            </a>
-                        </p>
-                    </div>
-                </form>
-            </div>
-
-            <div className="flex items-center justify-center bg-white p-8">
-                <img src={logo} alt="Logo" className="max-w-full h-auto" />
+                {/* Right Column - Logo */}
+                <div className="flex items-center justify-center bg-white p-8">
+                    <img src={logo} alt="Logo" className="max-w-full h-auto" />
+                </div>
             </div>
         </div>
     );

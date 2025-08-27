@@ -115,7 +115,6 @@ export default function Recommended() {
         )}
       </div>
 
-      {/* Products Grid */}
       <div className="overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {recommendeds
@@ -126,7 +125,6 @@ export default function Recommended() {
                 className="group cursor-pointer"
                 onClick={() => handleProductClick(product.id)}
               >
-                {/* Product Image (fallback to placeholder if no image) */}
                 <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4">
                   <img
                     src={(() => {
@@ -144,13 +142,11 @@ export default function Recommended() {
                   />
                 </div>
 
-                {/* Product Info */}
                 <div className="space-y-2">
                   <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors line-clamp-2">
                     {product.name}
                   </h3>
 
-                  {/* Price */}
                   <div className="flex items-center space-x-2">
                     <span className="font-medium text-gray-900">
                       ${product.price}
@@ -162,7 +158,6 @@ export default function Recommended() {
         </div>
       </div>
 
-      {/* View All Button */}
       <div className="text-center pt-4">
         <button
           onClick={() => navigate("/products")}

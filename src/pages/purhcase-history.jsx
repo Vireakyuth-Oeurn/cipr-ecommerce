@@ -41,55 +41,83 @@ export default function PurchaseHistory() {
   }, []);
 
   if (loading) return <p>Loading...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+
+  // Tailwind CSS classes for responsive table styling
+  const tableHeaders = ["Product ID", "Name", "Description", "Quantity", "Price", "Sale Date"];
 
   return (
-    <div className="relative overflow-x-auto sm:rounded-lg p-12">
-      <h1 className="text-xl font-bold p-4">PURCHASE HISTORY</h1>
+    <div className="p-4 sm:p-12">
+      <h1 className="text-2xl font-bold p-4 text-center">PURCHASE HISTORY</h1>
       {history.length === 0 ? (
         <p className="p-4">No order history found.</p>
       ) : (
-        <table className="w-full p-4 text-sm text-left text-black my-5">
-          <thead className="text-xs uppercase text-black bg-gray-100 ">
-            <tr>
-              <th scope="col" className="px-6 py-3">
-                Product ID
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Name
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Description
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Quantity
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Price
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Sale Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b bg-white dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-50 shadow-sm"
-              >
-                <td className="px-6 py-4">{item.product.id}</td>
-                <td className="px-6 py-4">{item.product.name}</td>
-                <td className="px-6 py-4">
-                  {item.product.description?.join(", ")}
-                </td>
-                <td className="px-6 py-4">{item.quantity}</td>
-                <td className="px-6 py-4">${item.product.price}</td>
-                <td className="px-6 py-4">{item.sale_date}</td>
+        <div className="my-5 shadow-sm rounded-lg overflow-hidden">
+          {/* Traditional table view for larger screens */}
+          <table className="w-full text-sm text-left text-gray-800 hidden md:table">
+            <thead className="text-xs uppercase text-gray-800 bg-gray-100">
+              <tr>
+                {tableHeaders.map((header) => (
+                  <th key={header} scope="col" className="px-6 py-3">
+                    {header}
+                  </th>
+                ))}
               </tr>
+            </thead>
+            <tbody>
+              {history.map((item) => (
+                <tr
+                  key={item.id}
+                  className="bg-white border-b dark:border-gray-700 hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4">{item.product.id}</td>
+                  <td className="px-6 py-4">{item.product.name}</td>
+                  <td className="px-6 py-4">
+                    {item.product.description?.join(", ")}
+                  </td>
+                  <td className="px-6 py-4">{item.quantity}</td>
+                  <td className="px-6 py-4">${item.product.price}</td>
+                  <td className="px-6 py-4">{item.sale_date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Stacked card view for mobile screens */}
+          <div className="md:hidden">
+            {history.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white border-b border-gray-200 p-4 mb-4 rounded-lg shadow"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-500">Product ID:</span>
+                  <span className="text-right">{item.product.id}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-500">Name:</span>
+                  <span className="text-right">{item.product.name}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-500">Description:</span>
+                  <span className="text-right">{item.product.description?.join(", ")}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-500">Quantity:</span>
+                  <span className="text-right">{item.quantity}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-500">Price:</span>
+                  <span className="text-right">${item.product.price}</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-gray-500">Sale Date:</span>
+                  <span className="text-right">{item.sale_date}</span>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </div>
       )}
     </div>
   );
