@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Search, ChevronDown, ChevronUp, RefreshCw, AlertCircle } from 'lucide-react';
-import { searchProducts } from '../api/services';
-import ProductCard from '../components/ProductCard';
-import ProductSkeleton from '../components/ProductSkeleton';
-import ScrollToTop from '../components/ScrollToTop';
-import Toast from '../components/Toast';
-import ApiStatusBanner from '../components/ApiStatusBanner';
-import useDebounce from '../hooks/useDebounce';
-import { useErrorHandler } from '../hooks/useErrorHandler';
-import { useAsyncState } from '../hooks/useAsyncState';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
+import { searchProducts } from "../api/services";
+import ProductCard from "../components/ProductCard";
+import ProductSkeleton from "../components/ProductSkeleton";
+import ScrollToTop from "../components/ScrollToTop";
+import Toast from "../components/Toast";
+import ApiStatusBanner from "../components/ApiStatusBanner";
+import useDebounce from "../hooks/useDebounce";
+import { useErrorHandler } from "../hooks/useErrorHandler";
+import { useAsyncState } from "../hooks/useAsyncState";
 
 const Products = () => {
   const { handleError } = useErrorHandler();
@@ -16,7 +22,7 @@ const Products = () => {
     data: products,
     loading,
     error,
-    execute: executeProductFetch
+    execute: executeProductFetch,
   } = useAsyncState([]);
 
   const [activeFilters, setActiveFilters] = useState({
@@ -26,11 +32,11 @@ const Products = () => {
     priceRange: false,
     collections: false,
     tags: false,
-    ratings: false
+    ratings: false,
   });
 
-  const [selectedCategory, setSelectedCategory] = useState('NEW');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState("NEW");
+  const [searchQuery, setSearchQuery] = useState("");
   const [apiDown, setApiDown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -38,46 +44,49 @@ const Products = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Function to fetch products based on category or search
-  const fetchProductsData = async (category = 'ALL', searchTerm = '') => {
+  const fetchProductsData = async (category = "ALL", searchTerm = "") => {
     try {
       let data;
-      
+
       // If there's a search term, use search API
       if (searchTerm.trim()) {
-        console.log('Searching for:', searchTerm);
+        console.log("Searching for:", searchTerm);
         data = await searchProducts(searchTerm, 50); // Get more results for search
       }
       // If category is one of the special categories, use search API with keywords
-      else if (category === 'NEW' || category === 'LATEST') {
-        console.log('Fetching new products');
-        data = await searchProducts('new', 50);
-      }
-      else if (category === 'BEST SELLERS') {
-        console.log('Fetching best sellers');
-        data = await searchProducts('best', 50);
-      }
-      else if (category === 'RECOMMENDED') {
-        console.log('Fetching recommended products');
-        data = await searchProducts('recommended', 50);
+      else if (category === "NEW" || category === "LATEST") {
+        console.log("Fetching new products");
+        data = await searchProducts("new", 50);
+      } else if (category === "BEST SELLERS") {
+        console.log("Fetching best sellers");
+        data = await searchProducts("best", 50);
+      } else if (category === "RECOMMENDED") {
+        console.log("Fetching recommended products");
+        data = await searchProducts("recommended", 50);
       }
       // For ALL or other categories, get all products and filter client-side
       else {
-        console.log('Fetching product category:', category);
+        console.log("Fetching product category:", category);
         data = await searchProducts(category.toLowerCase(), 50);
       }
-      
+
       let filteredProducts = data.products || [];
-      
+
       // Apply category filter client-side for non-special categories
-      if (category !== 'ALL' && !['NEW', 'LATEST', 'BEST SELLERS', 'RECOMMENDED'].includes(category)) {
-        filteredProducts = filteredProducts.filter(product => 
-          product.category && product.category.toUpperCase() === category.toUpperCase()
+      if (
+        category !== "ALL" &&
+        !["NEW", "LATEST", "BEST SELLERS", "RECOMMENDED"].includes(category)
+      ) {
+        filteredProducts = filteredProducts.filter(
+          (product) =>
+            product.category &&
+            product.category.toUpperCase() === category.toUpperCase()
         );
       }
-      
+
       return filteredProducts;
     } catch (err) {
-      console.error('Failed to fetch products:', err);
+      console.error("Failed to fetch products:", err);
       throw err;
     }
   };
@@ -90,7 +99,10 @@ const Products = () => {
         return products;
       } catch (err) {
         // Check if it's an API server error
-        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+        if (
+          err.message.includes("500") ||
+          err.message.includes("Failed to fetch")
+        ) {
           setApiDown(true);
         }
         throw err;
@@ -99,9 +111,9 @@ const Products = () => {
 
     executeProductFetch(loadInitialProducts).catch((err) => {
       handleError(err, {
-        fallbackMessage: 'Failed to load products. Please try again.',
+        fallbackMessage: "Failed to load products. Please try again.",
         showToast: true,
-        context: 'initial_product_fetch'
+        context: "initial_product_fetch",
       });
     });
   }, []); // Only run on mount
@@ -118,7 +130,10 @@ const Products = () => {
         const products = await fetchProductsData(selectedCategory);
         return products;
       } catch (err) {
-        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+        if (
+          err.message.includes("500") ||
+          err.message.includes("Failed to fetch")
+        ) {
           setApiDown(true);
         }
         throw err;
@@ -127,9 +142,9 @@ const Products = () => {
 
     executeProductFetch(loadCategoryProducts).catch((err) => {
       handleError(err, {
-        fallbackMessage: 'Failed to load products for selected category.',
+        fallbackMessage: "Failed to load products for selected category.",
         showToast: true,
-        context: 'category_filter'
+        context: "category_filter",
       });
     });
   }, [selectedCategory, executeProductFetch, handleError]);
@@ -143,7 +158,10 @@ const Products = () => {
           const products = await fetchProductsData(selectedCategory);
           return products;
         } catch (err) {
-          if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+          if (
+            err.message.includes("500") ||
+            err.message.includes("Failed to fetch")
+          ) {
             setApiDown(true);
           }
           throw err;
@@ -152,9 +170,9 @@ const Products = () => {
 
       executeProductFetch(loadCategoryProducts).catch((err) => {
         handleError(err, {
-          fallbackMessage: 'Failed to reload products.',
+          fallbackMessage: "Failed to reload products.",
           showToast: true,
-          context: 'search_clear'
+          context: "search_clear",
         });
       });
       return;
@@ -164,10 +182,16 @@ const Products = () => {
     const performSearch = async () => {
       setIsSearching(true);
       try {
-        const products = await fetchProductsData(selectedCategory, debouncedSearchQuery);
+        const products = await fetchProductsData(
+          selectedCategory,
+          debouncedSearchQuery
+        );
         return products;
       } catch (err) {
-        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+        if (
+          err.message.includes("500") ||
+          err.message.includes("Failed to fetch")
+        ) {
           setApiDown(true);
         }
         throw err;
@@ -179,9 +203,9 @@ const Products = () => {
     executeProductFetch(performSearch).catch((err) => {
       setIsSearching(false);
       handleError(err, {
-        fallbackMessage: 'Search failed. Please try again.',
+        fallbackMessage: "Search failed. Please try again.",
         showToast: true,
-        context: 'product_search'
+        context: "product_search",
       });
     });
   }, [debouncedSearchQuery, executeProductFetch, handleError]);
@@ -189,10 +213,16 @@ const Products = () => {
   const handleRetry = () => {
     const retryFetch = async () => {
       try {
-        const products = await fetchProductsData(selectedCategory, debouncedSearchQuery);
+        const products = await fetchProductsData(
+          selectedCategory,
+          debouncedSearchQuery
+        );
         return products;
       } catch (err) {
-        if (err.message.includes('500') || err.message.includes('Failed to fetch')) {
+        if (
+          err.message.includes("500") ||
+          err.message.includes("Failed to fetch")
+        ) {
           setApiDown(true);
         }
         throw err;
@@ -201,9 +231,9 @@ const Products = () => {
 
     executeProductFetch(retryFetch).catch((err) => {
       handleError(err, {
-        fallbackMessage: 'Retry failed. Please try again.',
+        fallbackMessage: "Retry failed. Please try again.",
         showToast: true,
-        context: 'product_fetch_retry'
+        context: "product_fetch_retry",
       });
     });
   };
@@ -216,22 +246,29 @@ const Products = () => {
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
     // Clear search when changing category
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   const toggleFilter = (filter) => {
-    setActiveFilters(prev => ({
+    setActiveFilters((prev) => ({
       ...prev,
-      [filter]: !prev[filter]
+      [filter]: !prev[filter],
     }));
   };
 
   const categories = [
-    'NEW', 'BEST SELLERS', 'RECOMMENDED', 'SUIT', 'SHOES', 
-    'PYJAMAS', 'SHORT', 'DRESS', 'T-SHIRT'
+    "NEW",
+    "BEST SELLERS",
+    "RECOMMENDED",
+    "SUIT",
+    "SHOES",
+    "PYJAMAS",
+    "SHORT",
+    "DRESS",
+    "T-SHIRT",
   ];
 
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', '2X'];
+  const sizes = ["XS", "S", "M", "L", "XL", "2X"];
 
   // Show loading state
   if (loading && !products.length) {
@@ -252,39 +289,35 @@ const Products = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* API Status Banner */}
         {apiDown && <ApiStatusBanner onRetry={handleRetryApi} />}
-        
-        {/* Breadcrumb */}
-        <div className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-          <span>Home</span>
-          <span>/</span>
-          <span className="text-gray-900">Products</span>
-        </div>
 
         {/* Page Title */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">PRODUCTS</h1>
             <p className="text-sm text-gray-600 mt-1">
-              {isSearching ? (
-                'Searching...'
-              ) : debouncedSearchQuery.trim() ? (
-                `Search results for "${debouncedSearchQuery}" (${products.length} found)`
-              ) : (
-                `${selectedCategory} (${products.length})`
-              )}
+              {isSearching
+                ? "Searching..."
+                : debouncedSearchQuery.trim()
+                ? `Search results for "${debouncedSearchQuery}" (${products.length} found)`
+                : `${selectedCategory} (${products.length})`}
             </p>
           </div>
           {error && (
             <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded text-sm flex items-center gap-2">
               <AlertCircle size={16} />
-              <span>{error.message || 'Using demo data (API unavailable)'}</span>
+              <span>
+                {error.message || "Using demo data (API unavailable)"}
+              </span>
               {error.canRetry && (
                 <button
                   onClick={handleRetry}
                   className="ml-2 text-yellow-800 hover:text-yellow-900 underline text-sm flex items-center gap-1"
                   disabled={loading}
                 >
-                  <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                  <RefreshCw
+                    size={14}
+                    className={loading ? "animate-spin" : ""}
+                  />
                   Retry
                 </button>
               )}
@@ -305,7 +338,7 @@ const Products = () => {
                     <strong>Search:</strong> "{debouncedSearchQuery}"
                   </p>
                   <button
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => setSearchQuery("")}
                     className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
                   >
                     Clear search
@@ -331,21 +364,37 @@ const Products = () => {
               {/* Availability Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('availability')}
+                  onClick={() => toggleFilter("availability")}
                   className="flex items-center justify-between w-full text-left"
                 >
-                  <h3 className="text-sm font-medium text-gray-900">Availability</h3>
-                  {activeFilters.availability ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Availability
+                  </h3>
+                  {activeFilters.availability ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
                 {activeFilters.availability && (
                   <div className="mt-3 space-y-2">
                     <label className="flex items-center">
-                      <input type="checkbox" className="rounded border-gray-300" />
-                      <span className="ml-2 text-sm text-gray-600">Available</span>
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-600">
+                        Available
+                      </span>
                     </label>
                     <label className="flex items-center">
-                      <input type="checkbox" className="rounded border-gray-300" />
-                      <span className="ml-2 text-sm text-gray-600">Out Of Stock</span>
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-600">
+                        Out Of Stock
+                      </span>
                     </label>
                   </div>
                 )}
@@ -354,66 +403,96 @@ const Products = () => {
               {/* Category Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('category')}
+                  onClick={() => toggleFilter("category")}
                   className="flex items-center justify-between w-full text-left"
                 >
-                  <h3 className="text-sm font-medium text-gray-900">Category</h3>
-                  {activeFilters.category ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Category
+                  </h3>
+                  {activeFilters.category ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
 
               {/* Colors Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('colors')}
+                  onClick={() => toggleFilter("colors")}
                   className="flex items-center justify-between w-full text-left"
                 >
                   <h3 className="text-sm font-medium text-gray-900">Colors</h3>
-                  {activeFilters.colors ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {activeFilters.colors ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
 
               {/* Price Range Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('priceRange')}
+                  onClick={() => toggleFilter("priceRange")}
                   className="flex items-center justify-between w-full text-left"
                 >
-                  <h3 className="text-sm font-medium text-gray-900">Price Range</h3>
-                  {activeFilters.priceRange ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Price Range
+                  </h3>
+                  {activeFilters.priceRange ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
 
               {/* Collections Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('collections')}
+                  onClick={() => toggleFilter("collections")}
                   className="flex items-center justify-between w-full text-left"
                 >
-                  <h3 className="text-sm font-medium text-gray-900">Collections</h3>
-                  {activeFilters.collections ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Collections
+                  </h3>
+                  {activeFilters.collections ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
 
               {/* Tags Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('tags')}
+                  onClick={() => toggleFilter("tags")}
                   className="flex items-center justify-between w-full text-left"
                 >
                   <h3 className="text-sm font-medium text-gray-900">Tags</h3>
-                  {activeFilters.tags ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {activeFilters.tags ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
 
               {/* Ratings Filter */}
               <div>
                 <button
-                  onClick={() => toggleFilter('ratings')}
+                  onClick={() => toggleFilter("ratings")}
                   className="flex items-center justify-between w-full text-left"
                 >
                   <h3 className="text-sm font-medium text-gray-900">Ratings</h3>
-                  {activeFilters.ratings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {activeFilters.ratings ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
                 </button>
               </div>
             </div>
@@ -449,8 +528,8 @@ const Products = () => {
                   disabled={loading || isSearching}
                   className={`px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-50 ${
                     selectedCategory === category
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                   }`}
                 >
                   {category}
@@ -464,7 +543,7 @@ const Products = () => {
                 <div className="flex items-center">
                   <RefreshCw className="h-4 w-4 text-blue-600 animate-spin mr-2" />
                   <span className="text-sm text-blue-800">
-                    {isSearching ? 'Searching...' : 'Loading...'}
+                    {isSearching ? "Searching..." : "Loading..."}
                   </span>
                 </div>
               </div>
@@ -479,31 +558,40 @@ const Products = () => {
                 ))
               ) : products.length > 0 ? (
                 products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                  />
+                  <ProductCard key={product.id} product={product} />
                 ))
               ) : (
                 <div className="col-span-full text-center py-16">
                   <div className="text-gray-400 mb-4">
-                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="w-16 h-16 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No products found
+                  </h3>
                   <p className="text-gray-600">
-                    {debouncedSearchQuery.trim() 
+                    {debouncedSearchQuery.trim()
                       ? `No results found for "${debouncedSearchQuery}"`
-                      : 'Try adjusting your search or filters'
-                    }
+                      : "Try adjusting your search or filters"}
                   </p>
                   {debouncedSearchQuery.trim() && (
                     <button
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => setSearchQuery("")}
                       className="mt-3 text-blue-600 hover:text-blue-800 underline"
                     >
-                      Clear search and show {selectedCategory.toLowerCase()} products
+                      Clear search and show {selectedCategory.toLowerCase()}{" "}
+                      products
                     </button>
                   )}
                 </div>
